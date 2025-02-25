@@ -1,5 +1,12 @@
 ## KOTLAND
 
+Install modules
+
+```bash
+
+yarn install
+
+```
 
 Start Dev server:
 
