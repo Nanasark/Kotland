@@ -15,6 +15,7 @@ Start Dev server:
 yarn dev
 
 ```
+# create a new branch to push your changes
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
