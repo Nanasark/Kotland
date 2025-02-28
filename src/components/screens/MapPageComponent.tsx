@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import * as turf from "@turf/turf";
+import torontoBuilding from "./buildings.json";
 
 export default function MapPageComponent() {
     const mapRef = useRef(null);
@@ -84,20 +85,21 @@ export default function MapPageComponent() {
     };
 
     const loadBuildings = async () => {
-        const overpassQuery = `
-            [out:json]; 
-            (
-                way[building](43.681,-79.46,43.719,-79.38); 
-            );
-            (._;>;); 
-            out body;
-        `;
+        // const overpassQuery = `
+        //     [out:json]; 
+        //     (
+        //         way[building](43.681,-79.46,43.719,-79.38); 
+        //     );
+        //     (._;>;); 
+        //     out body;
+        // `;
 
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
+        // const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
 
         try {
-            const response = await fetch(url);
-            const data = await response.json();
+            // const response = await fetch(url);
+            // const data = await response.json();
+            const data = torontoBuilding;
 
             const nodes = {};
             data.elements.forEach((el) => {
