@@ -1,7 +1,7 @@
 "use client";  // for Next.js App Router (v13+)
 
 import { useEffect, useRef, useState } from "react";
-import L from "leaflet";
+import L, { LatLng, LatLngBounds } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import * as turf from "@turf/turf";
 import torontoBuilding from "./buildings.json";
@@ -14,7 +14,7 @@ export default function MapPageComponent() {
     useEffect(() => {
         if (mapRef.current) return; // Prevent duplicate map initialization
 
-        const torontoCenter = [43.7, -79.42];
+        const torontoCenter:LatLng = L.latLng(43.7, -79.42);
 
         const bounds = L.latLngBounds(
             [43.681, -79.46],
