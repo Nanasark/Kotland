@@ -1,1 +1,0 @@
-export const NFT_CONTRACT_ADDRESS = "0xkljhgfv";
