@@ -4,19 +4,21 @@ import { useEffect, useRef, useState } from "react"
 import L, { type LatLng } from "leaflet"
 import "leaflet/dist/leaflet.css"
 import * as turf from "@turf/turf"
-import torontoBuilding from "./buildings.json"
 
 export default function MapPageComponent() {
   const mapRef = useRef<L.Map | null>(null)
   const propertyLayerRef = useRef<L.GeoJSON | null>(null)
-  const [claimedProperties, setClaimedProperties] = useState(new Set<number>())
+  const claimedProperties = useRef(new Set());
   const [popupMarker, setPopupMarker] = useState<L.Marker | null>(null) // Store the temporary claim marker
 
   useEffect(() => {
     if (mapRef.current) return // Prevent duplicate map initialization
 
     const torontoCenter: LatLng = L.latLng(43.7, -79.42)
-    const bounds = L.latLngBounds([43.681, -79.46], [43.719, -79.38])
+    const bounds = L.latLngBounds(
+      [43.695, -79.435], 
+      [43.705, -79.405]
+    )
 
     const map = L.map("map", {
       center: torontoCenter,
@@ -24,6 +26,7 @@ export default function MapPageComponent() {
       minZoom: 14,
       maxZoom: 20,
       maxBounds: bounds,
+      zoomControl: true,
       maxBoundsViscosity: 1.0,
     })
 
@@ -45,7 +48,7 @@ export default function MapPageComponent() {
       }),
       onEachFeature: (feature, layer) => {
         if (feature.geometry.type === "Polygon") {
-          layer.on("click", (e) => showClaimMarker(e.latlng, feature.properties.id))
+          layer.on("click", () => showClaimPopup(layer, feature.properties.id));
         }
       },
     }).addTo(map)
@@ -54,92 +57,89 @@ export default function MapPageComponent() {
     loadBuildings()
   }, [])
 
-  // Function to show a marker popup with a Claim button
-  const showClaimMarker = (latlng: L.LatLng, featureId: number) => {
-    if (claimedProperties.has(featureId)) return
+  
 
-    // Remove any existing claim marker
-    if (popupMarker) {
-      popupMarker.remove()
-    }
+  function showClaimPopup(layer: L.Layer, featureId: number) {
+    if (claimedProperties.current.has(featureId)) return;
 
-    // Create a new marker at the clicked location
-    const marker = L.marker(latlng)
-      .addTo(mapRef.current!)
-      .bindPopup(
-        `<button id="claim-btn" style="background:#4cd6e3; color:#1a1528; padding:5px 10px; border:none; cursor:pointer; font-weight:bold; border-radius:4px;">Claim</button>`,
-      )
-      .openPopup()
+    const areaSqMeters = calculateBuildingArea(layer.toGeoJSON() as any);
 
-    setPopupMarker(marker)
-
-    // Wait for the button to render and attach an event listener
-    setTimeout(() => {
-      const btn = document.getElementById("claim-btn")
-      if (btn) {
-        btn.addEventListener("click", () => claimProperty(featureId, marker))
-      }
-    }, 100)
+    const popupContnent = `
+      <p> Area: ${areaSqMeters.toFixed(2)} sqM </p>
+      <button onclick="window.claimProperty(${featureId})">Claim</button>
+    `;
+    layer.bindPopup(popupContnent).openPopup();
   }
 
-  // Function to claim a property and update its color
-  const claimProperty = (featureId: number, marker: L.Marker) => {
-    setClaimedProperties((prev) => new Set(prev).add(featureId))
+  useEffect(() => {
+    (window as any).claimProperty = claimProperty;
+  }, []);
 
-    // Find the corresponding layer and update its style
-    const layer = propertyLayerRef.current?.getLayers().find((l) => (l as any).feature.properties.id === featureId)
+  function claimProperty(featureId: number) {
+    const propertyLayer = propertyLayerRef.current;
+    if(!propertyLayer) return;
 
-    if (layer) {
-      ;(layer as any).setStyle({ color: "#4cd6e3", weight: 2, fillOpacity: 0.7 })
+    const layer = propertyLayer.getLayers().find((l) => {
+      const feature = (l as L.GeoJSON).feature;
+      return feature?.properties?.id === featureId;
+    });
+    if(!layer) return;
+
+    claimedProperties.current.add(featureId);
+    (layer as L.Path).setStyle({ color: "#FFD700", weight: 2, fillOpacity: 0.7 });
+    (layer as L.Layer).closePopup();
+
+  }
+
+
+  function calculateBuildingArea(feature: any){
+    try {
+      return turf.area(feature);
+    } catch (err) {
+      console.warn("Area calcuation faied", err);
+      return 0;
     }
-
-    // Remove the claim marker
-    marker.remove()
   }
 
   // Function to load building data and add it to the map
-  const loadBuildings = async () => {
-    try {
-      const data = torontoBuilding
+  function loadBuildings() {
+    const overpassQuery = `
+      [out:json]; 
+      (way[building](43.695,-79.435,43.705,-79.405););
+      (._;>;); 
+      out body;
+    `;
 
-      const nodes: Record<number, [number, number]> = {}
-      data.elements.forEach((el: any) => {
-        if (el.type === "node") {
-          nodes[el.id] = [el.lon, el.lat]
-        }
-      })
+    const url = "https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(overpassQuery);
 
-      const features = data.elements
-        .filter((el: any) => el.type === "way" && el.nodes)
-        .map((el: any) => {
-          const coordinates = el.nodes.map((nodeId: number) => nodes[nodeId])
-          const areaSqMeters = turf.area({
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "Polygon",
-              coordinates: [coordinates],
-            },
-          })
-
-          return {
-            type: "Feature",
-            properties: { id: el.id, areaSqMeters },
-            geometry: {
-              type: "Polygon",
-              coordinates: [coordinates],
-            },
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        const nodes: Record<number, [number, number]> = {};
+        data.elements.forEach((el: any) => {
+          if (el.type === "node") {
+            nodes[el.id] = [el.lon, el.lat];
           }
-        })
+        });
 
-      propertyLayerRef.current?.clearLayers()
-      propertyLayerRef.current?.addData({
-        type: "FeatureCollection",
-        features,
+        const geojsonFeatures = data.elements
+          .filter((el: any) => el.type === "way" && el.nodes)
+          .map((el: any) => ({
+            type: "Feature",
+            properties: { id: el.id },
+            geometry: {
+              type: "Polygon",
+              coordinates: [el.nodes.map((nodeId: number) => nodes[nodeId])]
+            }
+          }));
+
+        propertyLayerRef.current?.clearLayers();
+        propertyLayerRef.current?.addData({
+          type: "FeatureCollection",
+          features: geojsonFeatures
+        });
       })
-    } catch (error) {
-      console.error("Error loading buildings:", error)
-    }
+      .catch((err) => console.error("Error loading buildings:", err));
   }
 
   return (

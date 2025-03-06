@@ -21,7 +21,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-5 flex flex-col justify-center">
             <h1 className="text-4xl md:text-6xl font-bold tracking-wider mb-6 leading-tight">
-              BUILD. <span className="text-[#4cd6e3]">TRADE.</span> CONQUEE.
+              BUILD. <span className="text-[#4cd6e3]">TRADE.</span> CONQUER.
             </h1>
             <p className="text-gray-300 text-lg mb-8">
               Build your farming empire, process resources, and trade in a dynamic economy affected by seasonal changes.
