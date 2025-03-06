@@ -1,7 +1,3 @@
-export const NFT_CONTRACT_ADDRESS = "0xkljhgfv";
-
-
-
 // src/constants/contract.ts
 
 export const CONTRACT_ADDRESS = "0xc47147F21220E576fE5EBDe0053655CE91FA66fD";

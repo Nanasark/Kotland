@@ -1,4 +1,4 @@
-import { bsc } from "thirdweb/chains";
+import { amoy } from "thirdweb/chains";
 
-export const chainId = bsc.id;
-export const chain = bsc;
+export const chainId = amoy.id;
+export const chain = amoy;

@@ -4,12 +4,17 @@ import { useEffect, useRef, useState } from "react"
 import L, { type LatLng } from "leaflet"
 import "leaflet/dist/leaflet.css"
 import * as turf from "@turf/turf"
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../../../constants/constants";
+import { useReadContract } from "thirdweb/react";
+import { ethers } from "ethers"
+
 
 export default function MapPageComponent() {
   const mapRef = useRef<L.Map | null>(null)
   const propertyLayerRef = useRef<L.GeoJSON | null>(null)
   const claimedProperties = useRef(new Set());
-  const [popupMarker, setPopupMarker] = useState<L.Marker | null>(null) // Store the temporary claim marker
+
+  const { contract } = useContract(CONTRACT_ADDRESS);
 
   useEffect(() => {
     if (mapRef.current) return // Prevent duplicate map initialization
@@ -63,9 +68,10 @@ export default function MapPageComponent() {
     if (claimedProperties.current.has(featureId)) return;
 
     const areaSqMeters = calculateBuildingArea(layer.toGeoJSON() as any);
-
+    const {data, isLoading, error} = useContractRead(contract, "pricePerSqM");
     const popupContnent = `
-      <p> Area: ${areaSqMeters.toFixed(2)} sqM </p>
+      <p> Area: ${areaSqMeters.toFixed(2)} sqM </p>   
+      <p> Price : ${ethers.utils.formatEther(data)} sqM </p>
       <button onclick="window.claimProperty(${featureId})">Claim</button>
     `;
     layer.bindPopup(popupContnent).openPopup();
