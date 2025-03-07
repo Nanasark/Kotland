@@ -106,7 +106,7 @@ export default function MarketplacePage() {
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 bg-[#4cd6e3]/10 rounded-full flex items-center justify-center mb-2">
                   <Image
-                    src="/placeholder.svg?height=100&width=100"
+                    src="/avatar.jpg"
                     alt="User Avatar"
                     width={40}
                     height={40}
@@ -183,7 +183,7 @@ export default function MarketplacePage() {
               <div className="p-4">
                 <div className="aspect-[4/3] relative">
                   <Image
-                    src="/placeholder.svg?height=600&width=800&text=Isometric+Farm+View"
+                    src="/planeland.jpg"
                     alt="Farm Visualization"
                     width={800}
                     height={600}

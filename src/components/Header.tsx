@@ -22,7 +22,7 @@ export default function Header() {
               <HexagonIcon className="h-10 w-10" />
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="#" className="text-white hover:text-[#4cd6e3]">
+              <Link href="/" className="text-white hover:text-[#4cd6e3]">
                  Home
               </Link>
               <Link href="#" className="text-white hover:text-[#4cd6e3] border-b-2 border-[#4cd6e3] pb-1">
