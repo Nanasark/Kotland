@@ -31,7 +31,7 @@ export default function Header() {
               <Link href="#" className="text-white hover:text-[#4cd6e3]">
                 Tokenomics
               </Link>
-              <Link href="#" className="text-white hover:text-[#4cd6e3]">
+              <Link href="/marketplace" className="text-white hover:text-[#4cd6e3]">
                  Marketplace
               </Link>
               <Link href="#" className="text-white hover:text-[#4cd6e3]">
