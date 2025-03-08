@@ -27,9 +27,9 @@ export default function Home() {
               Build your farming empire, process resources, and trade in a dynamic economy affected by seasonal changes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-[#4cd6e3] hover:bg-[#3ac0cd] text-black py-3 px-8 rounded-lg font-medium text-lg transition-colors">
+              <Link href="/farm" className="bg-[#4cd6e3] hover:bg-[#3ac0cd] text-black py-3 px-8 rounded-lg font-medium text-lg transition-colors">
                 Start Playing
-              </button>
+              </Link>
               <button className="bg-transparent border-2 border-[#4cd6e3] text-[#4cd6e3] hover:bg-[#4cd6e3]/10 py-3 px-8 rounded-lg font-medium text-lg transition-colors">
                 Watch Demo
               </button>
