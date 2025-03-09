@@ -129,7 +129,7 @@ export default function MarketplacePage() {
                 </Link>
                 <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#4cd6e3]/10 text-gray-400 hover:text-[#4cd6e3] transition-colors">
                   <Box className="h-4 w-4" />
-                  <span className="text-sm">Inventory</span>
+                  <span className="text-sm">Game Store</span>
                 </button>
                 <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#4cd6e3]/10 text-gray-400 hover:text-[#4cd6e3] transition-colors">
                   <LineChart className="h-4 w-4" />
