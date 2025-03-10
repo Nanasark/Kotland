@@ -1,10 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import { Cloud, Droplets, Sun, Box, LineChart, Leaf, Sprout, Tag, User } from "lucide-react"
 import Header from "@/components/Header"
-
+import { generateTiles } from "../../../utils/generateTiles"
+import { PreparedTransaction } from "thirdweb"
+import { prepareContractCall } from "thirdweb"
+import { useSendTransaction } from "thirdweb/react"
+import { mainContract } from "../contract"
+import { GetUserAddress } from "../../../utils/getUserAddress"
 // Define tile types and data
 type TileStatus = "available" | "owned" | "active" | "inactive" | "forSale"
 type CropType = "wheat" | "corn" | "potato" | "carrot" | "none"
@@ -32,76 +37,96 @@ interface UserStats {
 }
 
 // Sample data
-const generateTiles = (rows: number, columns: number): Tile[] => {
-  const tiles: Tile[] = []
-  const currentUser = "CryptoFarmer" // Current user's ID
+// const generateTiles = async (rows: number, columns: number): Promise<Tile[]> => {
 
-  for (let i = 0; i < rows * columns; i++) {
-    // Randomly assign different states for demo
-    const random = Math.random()
+ 
 
-    if (random < 0.2) {
-      // Available (not purchased) - green
-      tiles.push({
-        id: i,
-        status: "available",
-        cropType: "none",
-        fertility: 70 + Math.floor(Math.random() * 30),
-        waterLevel: 60 + Math.floor(Math.random() * 40),
-        sunlight: 50 + Math.floor(Math.random() * 50),
-        purchasePrice: 100 + Math.floor(Math.random() * 400),
-      })
-    } else if (random < 0.4) {
-      // Owned by others - yellow
-      tiles.push({
-        id: i,
-        status: "owned",
-        owner: `Farmer${Math.floor(Math.random() * 100)}`,
-        cropType: ["wheat", "corn", "potato", "carrot"][Math.floor(Math.random() * 4)] as CropType,
-        growthStage: Math.floor(Math.random() * 100),
-        fertility: 70 + Math.floor(Math.random() * 30),
-        waterLevel: 60 + Math.floor(Math.random() * 40),
-        sunlight: 50 + Math.floor(Math.random() * 50),
-      })
-    } else if (random < 0.6) {
-      // Owned by me but inactive - gray
-      tiles.push({
-        id: i,
-        status: "inactive",
-        owner: currentUser,
-        cropType: "none",
-        fertility: 70 + Math.floor(Math.random() * 30),
-        waterLevel: 60 + Math.floor(Math.random() * 40),
-        sunlight: 50 + Math.floor(Math.random() * 50),
-      })
-    } else if (random < 0.8) {
-      // Owned by me and active - blue
-      tiles.push({
-        id: i,
-        status: "active",
-        owner: currentUser,
-        cropType: ["wheat", "corn", "potato", "carrot"][Math.floor(Math.random() * 4)] as CropType,
-        growthStage: Math.floor(Math.random() * 100),
-        fertility: 70 + Math.floor(Math.random() * 30),
-        waterLevel: 60 + Math.floor(Math.random() * 40),
-        sunlight: 50 + Math.floor(Math.random() * 50),
-      })
-    } else {
-      // For sale by another user - purple
-      tiles.push({
-        id: i,
-        status: "forSale",
-        owner: `Farmer${Math.floor(Math.random() * 100)}`,
-        cropType: "none",
-        fertility: 70 + Math.floor(Math.random() * 30),
-        waterLevel: 60 + Math.floor(Math.random() * 40),
-        sunlight: 50 + Math.floor(Math.random() * 50),
-        forSalePrice: 500 + Math.floor(Math.random() * 1000),
-      })
-    }
-  }
-  return tiles
-}
+//   const tiles: Tile[] = []
+//   const currentUser = "CryptoFarmer" // Current user's ID
+
+//   for (let i = 0; i < rows * columns; i++) {
+//      const tileExists = readContract({
+//     contract: mainContract,
+//     method: "tileExists",
+//     params:[BigInt(i)]
+//      })
+    
+    
+//      const tileDetails = getTileDetails(BigInt(i))
+     
+
+
+// // Now you can use tileOwner safely
+
+
+   
+//     // Randomly assign different states for demo
+//     const random = Math.random()
+
+//     if (!tileExists ) {
+//       // Available (not purchased) - green
+//       tiles.push({
+//         id: i,
+//         status: "available",
+//         cropType: "none",
+//         fertility: 70 + Math.floor(Math.random() * 30),
+//         waterLevel: 60 + Math.floor(Math.random() * 40),
+//         sunlight: 50 + Math.floor(Math.random() * 50),
+//         purchasePrice: 100 + Math.floor(Math.random() * 400),
+//       })
+//     } else {
+//      if (random < 0.4) {
+//       // Owned by others - yellow
+//       tiles.push({
+//         id: i,
+//         status: "owned",
+//         owner: `Farmer${Math.floor(Math.random() * 100)}`,
+//         cropType: ["wheat", "corn", "potato", "carrot"][Math.floor(Math.random() * 4)] as CropType,
+//         growthStage: Math.floor(Math.random() * 100),
+//         fertility: 70 + Math.floor(Math.random() * 30),
+//         waterLevel: 60 + Math.floor(Math.random() * 40),
+//         sunlight: 50 + Math.floor(Math.random() * 50),
+//       })
+//     } else if (random < 0.6) {
+//       // Owned by me but inactive - gray
+//       tiles.push({
+//         id: i,
+//         status: "inactive",
+//         owner: currentUser,
+//         cropType: "none",
+//         fertility: 70 + Math.floor(Math.random() * 30),
+//         waterLevel: 60 + Math.floor(Math.random() * 40),
+//         sunlight: 50 + Math.floor(Math.random() * 50),
+//       })
+//     } else if (random < 0.8) {
+//       // Owned by me and active - blue
+//       tiles.push({
+//         id: i,
+//         status: "active",
+//         owner: currentUser,
+//         cropType: ["wheat", "corn", "potato", "carrot"][Math.floor(Math.random() * 4)] as CropType,
+//         growthStage: Math.floor(Math.random() * 100),
+//         fertility: 70 + Math.floor(Math.random() * 30),
+//         waterLevel: 60 + Math.floor(Math.random() * 40),
+//         sunlight: 50 + Math.floor(Math.random() * 50),
+//       })
+//     } else {
+//       // For sale by another user - purple
+//       tiles.push({
+//         id: i,
+//         status: "forSale",
+//         owner: `Farmer${Math.floor(Math.random() * 100)}`,
+//         cropType: "none",
+//         fertility: 70 + Math.floor(Math.random() * 30),
+//         waterLevel: 60 + Math.floor(Math.random() * 40),
+//         sunlight: 50 + Math.floor(Math.random() * 50),
+//         forSalePrice: 500 + Math.floor(Math.random() * 1000),
+//       })
+//     }
+//     }
+//   }
+//   return tiles
+// }
 
 const userStats: UserStats = {
   level: 12,
@@ -144,10 +169,24 @@ const userNFTs = [
 ]
 
 export default function FarmPage() {
-  const [tiles, setTiles] = useState<Tile[]>(generateTiles(8, 10))
+  const [tiles, setTiles] = useState<Tile[]>([])
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobileStatsOpen, setIsMobileStatsOpen] = useState(false)
+
+    const fetchTiles = async () => {
+    const generatedTiles = await generateTiles(8, 10, address); // Await the async function
+    setTiles(generatedTiles); // Update state with the resolved value
+  };
+  const address = GetUserAddress()
+  useEffect(() => {
+  const fetchTiles = async () => {
+    const generatedTiles = await generateTiles(8, 10, address); // Await the async function
+    setTiles(generatedTiles); // Update state with the resolved value
+  };
+
+  fetchTiles();
+  }, [address]);
 
   const handleTileClick = (tile: Tile) => {
     setSelectedTile(tile)
@@ -157,18 +196,39 @@ export default function FarmPage() {
     }
   }
 
+   const {mutateAsync: sendPurchase} = useSendTransaction()
   // Update the handlePurchaseTile function to set the owner to the current user
-  const handlePurchaseTile = (tileId: number) => {
-    setTiles(
-      tiles.map((tile) =>
-        tile.id === tileId ? { ...tile, status: "inactive", owner: "CryptoFarmer", cropType: "none" } : tile,
-      ),
-    )
-    setSelectedTile((prev) => (prev ? { ...prev, status: "inactive", owner: "CryptoFarmer", cropType: "none" } : null))
+  const handlePurchaseTile = async (tileId: number) => {
+    try {
+       const transaction =  prepareContractCall({
+      contract: mainContract,
+      method: "buyNewTile",
+      params:[BigInt(tileId)]
+
+    }) as PreparedTransaction;
+    
+      await sendPurchase(transaction)
+      await  fetchTiles()
+    
+    } catch (error) {
+      console.log(error)
+    }
+
+    // setTiles(
+    //   tiles.map((tile) =>
+    //     tile.id === tileId ? { ...tile, status: "inactive", owner: "CryptoFarmer", cropType: "none" } : tile,
+    //   ),
+    // )
+    // setSelectedTile((prev) => (prev ? { ...prev, status: "inactive", owner: "CryptoFarmer", cropType: "none" } : null))
   }
+
+ 
 
   // Update the handlePlantCrop function to change status to active
   const handlePlantCrop = (tileId: number, cropType: CropType) => {
+
+
+
     setTiles(tiles.map((tile) => (tile.id === tileId ? { ...tile, status: "active", cropType, growthStage: 0 } : tile)))
     setSelectedTile((prev) => (prev ? { ...prev, status: "active", cropType, growthStage: 0 } : null))
   }
