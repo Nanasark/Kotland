@@ -5,7 +5,7 @@ import { MainABI } from "./abi";
 import { SEEDTokenABI } from "./abi";
 import { EvolvingTomatoNFTABI } from "./abi";
 export const mainContract = getContract({
-    address: "0x7ba664E765c439763b213264Df2FB0A8E639DB94",
+    address: "0xd51a290A31495c2317a44a9945887875e1C19230",
     chain: chain,
     client:client,
     abi:MainABI

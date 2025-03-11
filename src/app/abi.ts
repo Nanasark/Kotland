@@ -33,7 +33,20 @@ export const MainABI = [
 				"type": "uint256"
 			}
 		],
-		"name": "evolveNFT",
+		"name": "fertilizeCrop",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tileId",
+				"type": "uint256"
+			}
+		],
+		"name": "harvestCrop",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -59,17 +72,12 @@ export const MainABI = [
 				"type": "uint256"
 			},
 			{
-				"internalType": "address",
-				"name": "nftContract",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "nftId",
-				"type": "uint256"
+				"internalType": "enum Land.CropType",
+				"name": "crop",
+				"type": "uint8"
 			}
 		],
-		"name": "stakeFarmNFT",
+		"name": "plantCrop",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -111,32 +119,6 @@ export const MainABI = [
 		"type": "event"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_newPrice",
-				"type": "uint256"
-			}
-		],
-		"name": "setPricePerTile",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_token",
-				"type": "address"
-			}
-		],
-		"name": "setToken",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -176,7 +158,33 @@ export const MainABI = [
 				"type": "uint256"
 			}
 		],
-		"name": "unstake",
+		"name": "waterCrop",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawReward",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawTokens",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -189,6 +197,43 @@ export const MainABI = [
 				"internalType": "address",
 				"name": "",
 				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "currentSeason",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getLastActionTimes",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "lastWatered",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "lastFertilized",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -246,6 +291,62 @@ export const MainABI = [
 				"internalType": "bool",
 				"name": "",
 				"type": "bool"
+			},
+			{
+				"internalType": "enum Land.CropType",
+				"name": "",
+				"type": "uint8"
+			},
+			{
+				"internalType": "enum Land.FactoryType",
+				"name": "",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getTilePrice",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getTokenAddress",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",
@@ -255,7 +356,7 @@ export const MainABI = [
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "userAddress",
+				"name": "user",
 				"type": "address"
 			}
 		],
@@ -300,6 +401,67 @@ export const MainABI = [
 				"internalType": "uint256[]",
 				"name": "",
 				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getWaterAndFertilizerPrice",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "lastFertilizedTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "lastWateredTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -332,6 +494,25 @@ export const MainABI = [
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "seasons",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
 			}
 		],
 		"stateMutability": "view",
@@ -395,6 +576,36 @@ export const MainABI = [
 				"internalType": "bool",
 				"name": "forSale",
 				"type": "bool"
+			},
+			{
+				"internalType": "enum Land.CropType",
+				"name": "cropType",
+				"type": "uint8"
+			},
+			{
+				"internalType": "enum Land.FactoryType",
+				"name": "factoryType",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256",
+				"name": "fertility",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "waterLevel",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "sunlight",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "growthStage",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -507,6 +718,29 @@ export const MainABI = [
 				"internalType": "bool",
 				"name": "exists",
 				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalRewardsEarned",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "currentRewards",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "waterAndFertilizerPrice",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -1578,6 +1812,3 @@ export const EvolvingTomatoNFTABI = [
 export const PotatoNFTABI = [
 
 ] as const;
-
-
-
