@@ -53,9 +53,10 @@ export default function PurchaseModal({
     setError(null)
 
     try {
-      const success = await onPurchase()
-      if (success) {
-         setTimeout(onClose, 300); 
+        const success = await onPurchase()
+        onClose()
+      if (success ) {
+        onClose()
       }
     } catch (err) {
       setError("Failed to purchase tile. Please try again.")

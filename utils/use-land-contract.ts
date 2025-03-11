@@ -20,16 +20,16 @@ export function useLandContract() {
         })
 
         const approved = await approval(transaction)
-         console.log(approved)
-        
+        console.log(approve)
+        // await new Promise(resolve => setTimeout(resolve, 3000));
         // if ((approvalStatus === "success" || isApprovalSuccess) && !isApprovalError) {
         //     return true
         // }
         // else{
         // return false
         // }
-        return !!approved;
-        //  return !!approved.transactionHash;
+        // return !!approved;
+         return !!approved.transactionHash;
        
 
     } catch (error) {

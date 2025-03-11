@@ -133,7 +133,7 @@ export default function FarmPage() {
 
      const success = await purchaseTile(selectedTile.id)
      await fetchTiles()
-     if (success) {
+     if (success === true) {
        await fetchTiles()
      }
     return success
