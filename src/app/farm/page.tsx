@@ -5,11 +5,12 @@ import Image from "next/image"
 import { Cloud, Droplets, Sun, Box, LineChart, Leaf, Sprout, Tag, User } from "lucide-react"
 import Header from "@/components/Header"
 import { generateTiles } from "../../../utils/generateTiles"
-import { PreparedTransaction } from "thirdweb"
-import { prepareContractCall } from "thirdweb"
-import { useSendTransaction } from "thirdweb/react"
+import { readContract } from "thirdweb"
+
 import { mainContract } from "../contract"
 import { GetUserAddress } from "../../../utils/getUserAddress"
+import PurchaseModal from "@/components/purchase-modal"
+import { useLandContract } from "../../../utils/use-land-contract"
 // Define tile types and data
 type TileStatus = "available" | "owned" | "active" | "inactive" | "forSale"
 type CropType = "wheat" | "corn" | "potato" | "carrot" | "none"
@@ -36,97 +37,6 @@ interface UserStats {
   harvestReady: number
 }
 
-// Sample data
-// const generateTiles = async (rows: number, columns: number): Promise<Tile[]> => {
-
- 
-
-//   const tiles: Tile[] = []
-//   const currentUser = "CryptoFarmer" // Current user's ID
-
-//   for (let i = 0; i < rows * columns; i++) {
-//      const tileExists = readContract({
-//     contract: mainContract,
-//     method: "tileExists",
-//     params:[BigInt(i)]
-//      })
-    
-    
-//      const tileDetails = getTileDetails(BigInt(i))
-     
-
-
-// // Now you can use tileOwner safely
-
-
-   
-//     // Randomly assign different states for demo
-//     const random = Math.random()
-
-//     if (!tileExists ) {
-//       // Available (not purchased) - green
-//       tiles.push({
-//         id: i,
-//         status: "available",
-//         cropType: "none",
-//         fertility: 70 + Math.floor(Math.random() * 30),
-//         waterLevel: 60 + Math.floor(Math.random() * 40),
-//         sunlight: 50 + Math.floor(Math.random() * 50),
-//         purchasePrice: 100 + Math.floor(Math.random() * 400),
-//       })
-//     } else {
-//      if (random < 0.4) {
-//       // Owned by others - yellow
-//       tiles.push({
-//         id: i,
-//         status: "owned",
-//         owner: `Farmer${Math.floor(Math.random() * 100)}`,
-//         cropType: ["wheat", "corn", "potato", "carrot"][Math.floor(Math.random() * 4)] as CropType,
-//         growthStage: Math.floor(Math.random() * 100),
-//         fertility: 70 + Math.floor(Math.random() * 30),
-//         waterLevel: 60 + Math.floor(Math.random() * 40),
-//         sunlight: 50 + Math.floor(Math.random() * 50),
-//       })
-//     } else if (random < 0.6) {
-//       // Owned by me but inactive - gray
-//       tiles.push({
-//         id: i,
-//         status: "inactive",
-//         owner: currentUser,
-//         cropType: "none",
-//         fertility: 70 + Math.floor(Math.random() * 30),
-//         waterLevel: 60 + Math.floor(Math.random() * 40),
-//         sunlight: 50 + Math.floor(Math.random() * 50),
-//       })
-//     } else if (random < 0.8) {
-//       // Owned by me and active - blue
-//       tiles.push({
-//         id: i,
-//         status: "active",
-//         owner: currentUser,
-//         cropType: ["wheat", "corn", "potato", "carrot"][Math.floor(Math.random() * 4)] as CropType,
-//         growthStage: Math.floor(Math.random() * 100),
-//         fertility: 70 + Math.floor(Math.random() * 30),
-//         waterLevel: 60 + Math.floor(Math.random() * 40),
-//         sunlight: 50 + Math.floor(Math.random() * 50),
-//       })
-//     } else {
-//       // For sale by another user - purple
-//       tiles.push({
-//         id: i,
-//         status: "forSale",
-//         owner: `Farmer${Math.floor(Math.random() * 100)}`,
-//         cropType: "none",
-//         fertility: 70 + Math.floor(Math.random() * 30),
-//         waterLevel: 60 + Math.floor(Math.random() * 40),
-//         sunlight: 50 + Math.floor(Math.random() * 50),
-//         forSalePrice: 500 + Math.floor(Math.random() * 1000),
-//       })
-//     }
-//     }
-//   }
-//   return tiles
-// }
 
 const userStats: UserStats = {
   level: 12,
@@ -169,10 +79,13 @@ const userNFTs = [
 ]
 
 export default function FarmPage() {
+    const { approveTokens, purchaseTile } = useLandContract()
+
   const [tiles, setTiles] = useState<Tile[]>([])
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobileStatsOpen, setIsMobileStatsOpen] = useState(false)
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false)
 
     const fetchTiles = async () => {
     const generatedTiles = await generateTiles(8, 10, address); // Await the async function
@@ -188,6 +101,18 @@ export default function FarmPage() {
   fetchTiles();
   }, [address]);
 
+   
+
+  const handleApproveTokens = async (): Promise<boolean> => {
+    const tileprice =await readContract({
+            contract:mainContract,
+            method: "pricePerTile",
+            
+        });
+    if (!selectedTile) return false
+    return await approveTokens(tileprice)
+  }
+
   const handleTileClick = (tile: Tile) => {
     setSelectedTile(tile)
     // On mobile, automatically open the stats panel when a tile is selected
@@ -196,30 +121,22 @@ export default function FarmPage() {
     }
   }
 
-   const {mutateAsync: sendPurchase} = useSendTransaction()
   // Update the handlePurchaseTile function to set the owner to the current user
-  const handlePurchaseTile = async (tileId: number) => {
-    try {
-       const transaction =  prepareContractCall({
-      contract: mainContract,
-      method: "buyNewTile",
-      params:[BigInt(tileId)]
-
-    }) as PreparedTransaction;
-    
-      await sendPurchase(transaction)
-      await  fetchTiles()
-    
-    } catch (error) {
-      console.log(error)
+  const handlePurchaseTile = () => {
+   if (selectedTile) {
+      setIsPurchaseModalOpen(true)
     }
+  }
 
-    // setTiles(
-    //   tiles.map((tile) =>
-    //     tile.id === tileId ? { ...tile, status: "inactive", owner: "CryptoFarmer", cropType: "none" } : tile,
-    //   ),
-    // )
-    // setSelectedTile((prev) => (prev ? { ...prev, status: "inactive", owner: "CryptoFarmer", cropType: "none" } : null))
+   const handleCompletePurchase = async (): Promise<boolean> => {
+    if (!selectedTile) return false
+
+     const success = await purchaseTile(selectedTile.id)
+     await fetchTiles()
+     if (success) {
+       await fetchTiles()
+     }
+    return success
   }
 
  
@@ -236,6 +153,20 @@ export default function FarmPage() {
   return (
     <div className="min-h-screen bg-[#1a1528] text-white">
       <Header />
+
+      {selectedTile && (
+        <PurchaseModal
+          isOpen={isPurchaseModalOpen}
+          onClose={() => setIsPurchaseModalOpen(false)}
+          tileId={selectedTile.id}
+          price={selectedTile.purchasePrice || 0}
+          fertility={selectedTile.fertility}
+          waterLevel={selectedTile.waterLevel}
+          sunlight={selectedTile.sunlight}
+          onApprove={handleApproveTokens}
+          onPurchase={handleCompletePurchase}
+        />
+      )}
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -566,7 +497,7 @@ export default function FarmPage() {
                       </div>
 
                       <button
-                        onClick={() => handlePurchaseTile(selectedTile.id)}
+                       onClick={handlePurchaseTile}
                         className="w-full mt-4 bg-[#4cd6e3] hover:bg-[#3ac0cd] text-black py-2 rounded-lg font-medium transition-colors"
                       >
                         Purchase Tile

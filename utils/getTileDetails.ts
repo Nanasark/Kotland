@@ -10,7 +10,7 @@ export const getTileDetails = async ( tileId: bigint) => {
         });
 
         if (tileData !== null) {
-            const [id, owner, isBeingUsed, nftBeingUsed, nftIdBeingStaked, forSale] = tileData;
+            const [id, owner, isBeingUsed, nftBeingUsed, nftIdBeingStaked, forSale,] = tileData;
 
             return {
                 id,
