@@ -7,6 +7,9 @@ interface IERC20 {
         address recipient,
         uint256 amount
     ) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
+
+    function transfer(address recipient, uint256 amount) external returns (bool);
 }
 
 interface IEvolvableNFT {
@@ -24,13 +27,37 @@ contract Land {
     IERC20 public token; // Custom ERC20 token for payments
     uint256 public pricePerTile = 50 * 10 ** 18; // 50 tokens per tile (assuming 18 decimals)
 
+    enum CropType {
+        None,
+        Wheat,
+        Corn,
+        Potato,
+        Carrot
+    }
+
+    enum ResourceType{ None, WheatAmount, CornAmount, PotatoAmount, CarrotAmount, FoodAmount, EnergyAmount, FactoryGoodsAmount, FertilizerAmount}
+    enum FactoryType {
+        None,
+        FoodFactory,
+        EnergyFactory,
+        Bakery,
+        JuiceFactory,
+        BioFuelFactory
+    }
+
     struct TileData {
         uint256 id;
         address owner;
         bool isBeingUsed;
-        address nftBeingUsed;
-        uint256 nftIdBeingStaked;
         bool forSale;
+        bool isCrop;
+        bool isFactory;
+        CropType cropType;
+        FactoryType factoryType;
+        uint256 fertility;
+        uint256 waterLevel;
+        uint256 sunlight;
+        uint256 growthStage;
     }
 
     struct UserData {
@@ -38,10 +65,11 @@ contract Land {
         uint256 totalTilesOwned;
         uint256 tilesUnderUse;
         uint256 userExperience;
-        uint256 nftsBought;
-        uint256 nftsSold;
         bool exists;
         uint256[] ownedTileIds;
+        uint256 totalRewardsEarned;
+        uint256 currentRewards;     
+        mapping(ResourceType => uint256) inventory;
     }
 
     mapping(uint256 => TileData) public tiles;
@@ -49,7 +77,6 @@ contract Land {
     mapping(uint256 => bool) public tileExists;
     mapping(address => uint256[]) public tilesOfUser;
 
-    uint256[] public listedTilesForSellingId;
     uint256 public totalReBuys;
     uint256 public totalResellTile;
 
@@ -72,14 +99,19 @@ contract Land {
             "Token transfer failed"
         );
 
-        tiles[tileId] = TileData({
-            id: tileId,
-            owner: msg.sender,
-            isBeingUsed: false,
-            nftBeingUsed: address(0),
-            nftIdBeingStaked: 0,
-            forSale: false
-        });
+        TileData storage tile = tiles[tileId];
+        tile.id = tileId;
+        tile.owner = msg.sender;
+        tile.isBeingUsed = false;
+        tile.forSale = false;
+        tile.cropType = CropType.None;
+        tile.factoryType = FactoryType.None;
+        tile.fertility = 0;
+        tile.waterLevel = 0;
+        tile.growthStage = 0;
+        tile.isCrop = false;
+        tile.isFactory = false;
+
 
         tileExists[tileId] = true;
         tilesOfUser[msg.sender].push(tileId);
@@ -102,18 +134,20 @@ contract Land {
         _;
     }
 
+
     event TileListed(uint256 tileId);
-
-    function listTileForSale(uint256 tileId) external onlyTileOwner(tileId) {
+    uint256[] public listedTilesForSellingId;
+    mapping (uint256 => uint256) public tilePrices;
+    function listTileForSale(uint256 tileId, uint256 price) external onlyTileOwner(tileId) {
         require(tileExists[tileId], "Tile doesnt exist");
+        require(price > 0, "Price must be greater than 0");
         TileData storage tile = tiles[tileId];
-        require(!tile.forSale, "Property already listed");
-
+        require(!tile.forSale, "Tile already listed");
+        require(!tile.isBeingUsed, "Tile is still being used");
         tile.forSale = true;
         listedTilesForSellingId.push(tileId);
-        tile.isBeingUsed = false;
-        tile.nftBeingUsed = address(0);
-        tile.nftIdBeingStaked = 0;
+        tile.isBeingUsed = false;      
+        tilePrices[tileId] = price;
 
         emit TileListed(tileId);
     }
@@ -131,15 +165,18 @@ contract Land {
 
         address seller = tile.owner;
         require(
-            token.transferFrom(msg.sender, seller, pricePerTile),
+            token.transferFrom(msg.sender, seller, tilePrices[tileId]),
             "Token transfer failed"
         );
 
         tile.owner = msg.sender;
         tile.forSale = false;
+        delete tilePrices[tileId];
 
         updateUserAfterSale(seller, msg.sender, tileId);
         removeListedTile(tileId);
+
+        emit ReSaleTileBought(seller, msg.sender, tileId);
     }
 
     function updateUserAfterSale(
@@ -182,117 +219,354 @@ contract Land {
         }
     }
 
+    // -----------------------------------------------------
+
+    // farming functions
+
+    // -----------------------------------------------------
+
+    uint256 public cropPrice = 5 * 10 ** 18;
+    function plantCrop(
+        uint256 tileId,
+        CropType crop
+    ) external onlyTileOwner(tileId) payable {
+        TileData storage tile = tiles[tileId];
+        require(!tile.isBeingUsed, "Tile is already preparing something");
+        require(
+            token.transferFrom(
+                msg.sender,
+                address(this),
+                cropPrice
+            ),
+            "Token transfer failed"
+        );
+        tile.isBeingUsed = true;
+        tile.cropType = crop;
+        tile.growthStage = 0;
+        tile.isCrop = true;
+    }
+
+    function harvestCrop(uint256 tileId) external onlyTileOwner(tileId) {
+        require(tiles[tileId].isBeingUsed, "No crop planted");
+        require(
+            tiles[tileId].growthStage == 100,
+            "You cannot still harvest it"
+        );
+
+        UserData storage user = users[msg.sender];
+        user.tilesUnderUse -= 1;
+
+        TileData storage tile = tiles[tileId];
+        if(tile.cropType == CropType.Wheat) {
+            user.inventory[ResourceType.WheatAmount] += 100;
+        } else if (tile.cropType == CropType.Corn) {
+            user.inventory[ResourceType.CornAmount] += 100;
+        } else if (tile.cropType == CropType.Potato) {
+            user.inventory[ResourceType.PotatoAmount] += 100;
+        } else if (tile.cropType == CropType.Carrot) {
+            user.inventory[ResourceType.CarrotAmount] += 100;
+        }
+
+        tile.isBeingUsed = false;
+        tile.cropType = CropType.None;
+        tile.isCrop = false;
+
+        tile.fertility = 0;
+        tile.waterLevel = 0;
+        tile.growthStage = 0;
+
+    }
+
+    mapping(address => uint256) public lastWateredTime;
+
+    function waterCrop(uint256 tileId) external onlyTileOwner(tileId) {
+        require(tiles[tileId].isBeingUsed, "No Crop Planted");
+        require(
+            block.timestamp >= lastWateredTime[msg.sender] + 1 days,
+            "Can only water once every 24 hours"
+        );
+        
+        tiles[tileId].waterLevel += 10;
+        users[msg.sender].userExperience += 5;
+        plantGrowthCalculator(tileId);
+        if (tiles[tileId].growthStage >= 100) {
+            tiles[tileId].growthStage = 100;
+        }
+    }
+
+    mapping(address => uint256) public lastFertilizedTime;
+
+    function fertilizeCrop(uint256 tileId) external onlyTileOwner(tileId) {
+        require(tiles[tileId].isBeingUsed, "No Crop Planted");
+        require(
+            block.timestamp >= lastFertilizedTime[msg.sender] + 1 days,
+            "Can only fertilize once every 24 hours"
+        );
+        require(tiles[tileId].fertility <= 100, "The land has maximum fertilizer composition.");
+
+        UserData storage user = users[msg.sender];
+        TileData storage tile = tiles[tileId];
+        require(user.inventory[ResourceType.FertilizerAmount] >= 100, "Please Buy some fertilizer first");
+        user.inventory[ResourceType.FertilizerAmount] -= 100;
+        tile.fertility = 100;
+        user.userExperience += 5;
+        plantGrowthCalculator(tileId);
+        if (tile.growthStage >= 100) {
+            tile.growthStage = 100;
+        }
+        lastFertilizedTime[msg.sender] = block.timestamp;
+    }
+
+    string[4] public seasons = ["winter", "spring", "summer", "monsoon"];
+    uint8 public currentSeason = 0;
+
+    function plantGrowthCalculator(uint256 tileId) internal {
+        uint256 growthRate = 0;
+        TileData storage tile = tiles[tileId];
+
+        if (tile.cropType == CropType.Wheat) {
+            growthRate = (currentSeason == 1)
+                ? 15
+                : ((currentSeason == 2 || currentSeason == 3) ? 10 : 3);
+        } else if (tile.cropType == CropType.Corn) {
+            growthRate = (currentSeason == 2)
+                ? 20
+                : (currentSeason == 1 ? 10 : 2); // Best: Summer
+        } else if (tile.cropType == CropType.Potato) {
+            growthRate = (currentSeason == 0)
+                ? 12
+                : (currentSeason == 1 ? 7 : 3); // Best: Winter
+        } else if (tile.cropType == CropType.Carrot) {
+            growthRate = (currentSeason == 0)
+                ? 15
+                : ((currentSeason == 1 || currentSeason == 3) ? 8 : 2); // Best: Winter
+        } else {
+            growthRate = 0; // Default case
+        }
+
+        tile.growthStage =
+            tile.growthStage +
+            ((tile.waterLevel + tile.fertility) % growthRate);
+    }
+
+
+
+    // -----------------------------------------------------
+
+    // Factory functions
+
+    // -----------------------------------------------------
+
+
+    uint256 public factoryPrice = 100 * 10 ** 18;
+    function buildFactory(uint256 tileId, FactoryType factory) external payable onlyTileOwner(tileId) {
+        TileData storage tile = tiles[tileId];
+        require(!tile.isBeingUsed, "Tile is already cooking something");
+        require(token.transferFrom(msg.sender, address(this), factoryPrice));
+
+        tile.isBeingUsed = true;
+        tile.isFactory = true;
+        tile.factoryType = factory;
+    }
+
+    function produceFromFactory(uint256 tileId) external onlyTileOwner(tileId) {
+        TileData storage tile = tiles[tileId];
+        require(tile.isBeingUsed, "Nothing there");
+        require(tile.isFactory, "Not a factory tile");
+
+        UserData storage user = users[msg.sender];
+        require(user.inventory[ResourceType.EnergyAmount] > 10, "You dont have enough energy to power your factory");
+        user.inventory[ResourceType.EnergyAmount] -= 10;
+
+        if(tile.factoryType == FactoryType.FoodFactory) {
+            require(
+                user.inventory[ResourceType.WheatAmount] >= 50 ||
+                user.inventory[ResourceType.CornAmount] >= 50 ||
+                user.inventory[ResourceType.PotatoAmount] >= 50 ||
+                user.inventory[ResourceType.CarrotAmount] >= 50,
+                "You dont have enough resources to produce food. Go to Marketplace to buy some."
+            );
+
+            if (user.inventory[ResourceType.WheatAmount] >= 50) {
+                user.inventory[ResourceType.WheatAmount] -= 50;
+            } else if (user.inventory[ResourceType.CornAmount] >= 50) {
+                user.inventory[ResourceType.CornAmount] -= 50;
+            } else if (user.inventory[ResourceType.PotatoAmount] >= 50) {
+                user.inventory[ResourceType.PotatoAmount] -= 50;
+            } else if (user.inventory[ResourceType.CarrotAmount] >= 50) {
+                user.inventory[ResourceType.CarrotAmount] -= 50;
+            }
+
+            user.inventory[ResourceType.FoodAmount] += 10;
+
+        } else if (tile.factoryType == FactoryType.EnergyFactory) {
+            require(user.inventory[ResourceType.FoodAmount] >= 20, "Your workers arent well fed");
+            require(user.inventory[ResourceType.FactoryGoodsAmount] >= 10, "Not enough fuel to run the system");
+
+            user.inventory[ResourceType.FoodAmount] -= 20;
+            user.inventory[ResourceType.FactoryGoodsAmount] -= 10;
+            user.inventory[ResourceType.EnergyAmount] += 40;
+
+        } else if (tile.factoryType == FactoryType.Bakery) {
+            require(
+                user.inventory[ResourceType.WheatAmount] >= 30 &&
+                user.inventory[ResourceType.FoodAmount] >= 10,
+                "Not enough wheat and food"
+            );
+
+            user.inventory[ResourceType.WheatAmount] -= 30;
+            user.inventory[ResourceType.FoodAmount] -= 10;
+            user.inventory[ResourceType.FactoryGoodsAmount] += 10;
+        
+        } else if (tile.factoryType == FactoryType.JuiceFactory) {
+            require(
+                user.inventory[ResourceType.CornAmount] >= 20 &&
+                user.inventory[ResourceType.CarrotAmount] >= 20,
+                "Not enough Corn or Carrot"
+            );
+
+            user.inventory[ResourceType.CornAmount] -= 20;
+            user.inventory[ResourceType.CarrotAmount] -= 20;
+            user.inventory[ResourceType.FactoryGoodsAmount] += 10;
+        
+        } else if (tile.factoryType == FactoryType.BioFuelFactory) {
+            require(
+                user.inventory[ResourceType.CornAmount] >= 25 && 
+                user.inventory[ResourceType.FactoryGoodsAmount] > 5,
+                "Not enough Corn or Factory Goods"
+            );
+            user.inventory[ResourceType.CornAmount] -= 25;
+            user.inventory[ResourceType.FactoryGoodsAmount] -= 5;
+            user.inventory[ResourceType.EnergyAmount] += 10;
+
+        } else {
+            revert("Invalid Factory Type");
+        } 
+
+    }
+    // -----------------------------------------------------
+
+    // Marketplace functions
+
+    // -----------------------------------------------------
+
+
+    struct MarketListing {
+        address seller;
+        ResourceType resourceType;
+        uint256 amount;
+        uint256 pricePerUnit;
+        bool isActive;
+    } 
+
+    mapping(uint256 => MarketListing) public marketListings;
+    uint256 public nextListingId = 1;
+
+
+    event ListedResourceForSale(uint256 listingId, address seller, ResourceType resourceType, uint256 amount, uint256 pricePerUnit);
+    function listResourceForSale(ResourceType resourceType, uint256 amount, uint256 pricePerUnit) external {
+        require(amount > 0, "Amount must be greater than zero");
+        require(pricePerUnit > 0, "Price must be greater than zero");
+        require(users[msg.sender].inventory[resourceType] >= amount, "You donot have enough resources to sell");
+
+        users[msg.sender].inventory[resourceType] -= amount;
+
+        marketListings[nextListingId] = MarketListing({
+            seller: msg.sender,
+            resourceType: resourceType,
+            amount: amount,
+            pricePerUnit: pricePerUnit,
+            isActive: true
+        });
+
+
+        emit ListedResourceForSale(nextListingId, msg.sender, resourceType, amount, pricePerUnit);
+        nextListingId++;
+    }
+
+    event ResourcePurchaseMade(uint256 listingId, address buyer, uint256 amount);
+    function buyListedResource(uint256 listingId, uint256 buyAmount) external payable {
+        MarketListing storage listing = marketListings[listingId];
+        require(listing.isActive, "Listing is no more active");
+        require(buyAmount > 0 && buyAmount <= listing.amount, "Invalid amount provided");
+
+        uint256 totalCost = listing.pricePerUnit * buyAmount;
+        require(
+            token.transferFrom(msg.sender, listing.seller, totalCost),
+            "Token transfer failed"
+        );
+
+        users[msg.sender].inventory[listing.resourceType] += buyAmount;
+        listing.amount -= buyAmount;
+
+        if(listing.amount == 0) {
+            listing.isActive = false;
+        }
+        emit ResourcePurchaseMade(listingId, msg.sender, buyAmount);
+    }    
     // frontend helper
-
-    function getUserData(
-        address userAddress
-    )
-        external
-        view
-        returns (
-            address,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            bool,
-            uint256[] memory
-        )
-    {
-        UserData storage user = users[userAddress]; // Assuming you have a mapping(address => UserData) usersData;
-        require(user.exists, "User does not exist");
-
-        return (
-            user.userAddress,
-            user.totalTilesOwned,
-            user.tilesUnderUse,
-            user.userExperience,
-            user.nftsBought,
-            user.nftsSold,
-            user.exists,
-            user.ownedTileIds
-        );
-    }
-
-    function getTileData(
-        uint256 tileId
-    ) external view returns (uint256, address, bool, address, uint256, bool) {
-        require(tileExists[tileId], "Tile does not exist");
-
-        TileData storage tile = tiles[tileId]; // Assuming you have a mapping(uint256 => TileData) tiles;
-
-        return (
-            tile.id,
-            tile.owner,
-            tile.isBeingUsed,
-            tile.nftBeingUsed,
-            tile.nftIdBeingStaked,
-            tile.forSale
-        );
-    }
-
-
+   
     function getListedTilesForSale() external view returns (uint256[] memory) {
         return listedTilesForSellingId;
     }
 
-// -----------------------------------------------------
-
-    // staking functions
-
-// -----------------------------------------------------
-
-
-    function stakeFarmNFT(
-        uint256 tileId,
-        address nftContract,
-        uint256 nftId
-    ) external onlyTileOwner(tileId) {
-        require(!tiles[tileId].isBeingUsed, "Tile is already in use");
-
-        IERC721 nft = IERC721(nftContract);
-        require(nft.ownerOf(nftId) == msg.sender, "Not the NFT owner");
-
-        nft.transferFrom(msg.sender, address(this), nftId);
-
-        tiles[tileId].isBeingUsed = true;
-        tiles[tileId].nftBeingUsed = nftContract;
-        tiles[tileId].nftIdBeingStaked = nftId;
-
-        users[msg.sender].tilesUnderUse += 1;
+    function getTokenAddress() external view returns (address) {
+        return address(token);
     }
 
-    function unstake(uint256 tileId) external onlyTileOwner(tileId) {
-        require(tiles[tileId].isBeingUsed, "No NFT staked");
-
-        address nftContract = tiles[tileId].nftBeingUsed;
-        uint256 nftId = tiles[tileId].nftIdBeingStaked;
-
-        IERC721 nft = IERC721(nftContract);
-        nft.transferFrom(address(this), msg.sender, nftId);
-
-        tiles[tileId].isBeingUsed = false;
-        tiles[tileId].nftBeingUsed = address(0);
-        tiles[tileId].nftIdBeingStaked = 0;
-
-        users[msg.sender].tilesUnderUse -= 1;
+    function getTilePrice() external view returns (uint256) {
+        return pricePerTile;
     }
 
-    function evolveNFT(uint256 tileId) external onlyTileOwner(tileId) {
-        require(tiles[tileId].isBeingUsed, "No NFT Staked");
 
-        address nftContract = tiles[tileId].nftBeingUsed;
-        uint256 nftId = tiles[tileId].nftIdBeingStaked;
-
-        IEvolvableNFT(nftContract).evolveNFT(nftId);
+    function getLastActionTimes(address user) external view returns (uint256 lastWatered, uint256 lastFertilized) {
+        return (lastWateredTime[user], lastFertilizedTime[user]);
     }
 
-    function setToken(address _token) external onlyAdmin {
-        token = IERC20(_token);
+    function getActiveResourcesListings() external view returns (MarketListing[] memory) {
+        uint256 count = 0;
+
+        for (uint256 i = 1; i < nextListingId; i++) {
+            if (marketListings[i].isActive) {
+                count++;
+            }
+        }
+
+        MarketListing[] memory activeListings = new MarketListing[](count);
+        uint256 index = 0;
+        for(uint256 i = 1; i < nextListingId; i++) {
+            if(marketListings[i].isActive) {
+                activeListings[index] = marketListings[i];
+                index++;
+            }
+        }
+        return activeListings;
     }
 
-    function setPricePerTile(uint256 _newPrice) external onlyAdmin {
-        pricePerTile = _newPrice;
+
+
+
+    // user withdraw
+
+    function withdrawReward(uint256 amount) external {
+        UserData storage user = users[msg.sender];
+        require(user.exists, "User does not exist");
+        require(user.currentRewards >= amount, "Not enough rewards to withdraw");
+
+        user.currentRewards -= amount;
+        token.transferFrom(address(this), msg.sender, amount);
+        
     }
+
+
+
+    // admin
+
+
+    function withdrawTokens(uint256 amount) external onlyAdmin {
+        require(token.balanceOf(address(this)) >= amount, "Not enough tokens in contract");
+        token.transfer(admin, amount);
+    }
+
+
 }
