@@ -9,6 +9,7 @@ export function useLandContract() {
 
 
 
+
   const {mutateAsync:approval,isError:isApprovalError, isSuccess:isApprovalSuccess ,status: approvalStatus} = useSendTransaction()
   const approveTokens = async ( amount:bigint): Promise<boolean> => {
     try {
@@ -45,7 +46,7 @@ export function useLandContract() {
           const transaction =  prepareContractCall({
          contract: mainContract,
          method: "buyNewTile",
-         params:[BigInt(tileId)]
+         params:[Number(tileId)]
    
        }) as PreparedTransaction;
        

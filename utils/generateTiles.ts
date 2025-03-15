@@ -31,7 +31,7 @@ export const generateTiles = async (rows: number, columns: number, userAddress: 
       const tileExists = Boolean(await readContract({
         contract: mainContract,
         method: "tileExists",
-        params: [BigInt(i)],
+        params: [Number(i)],
       }));
 
       console.log(`Tile ${i} exists:`, tileExists);
@@ -40,7 +40,7 @@ export const generateTiles = async (rows: number, columns: number, userAddress: 
 
       if (tileExists) {
         try {
-          tileDetails = await getTileDetails(BigInt(i));
+          tileDetails = await getTileDetails(Number(i));
         } catch (error) {
           console.error(`Error fetching details for tile ${i}:`, error);
           continue; // Skip this tile and move to the next one

@@ -5,12 +5,12 @@ import Image from "next/image"
 import { Cloud, Droplets, Sun, Box, LineChart, Leaf, Sprout, Tag, User } from "lucide-react"
 import Header from "@/components/Header"
 import { generateTiles } from "../../../utils/generateTiles"
-import { readContract } from "thirdweb"
 
-import { mainContract } from "../contract"
+import {  SEEDTokenContract } from "../contract"
 import { GetUserAddress } from "../../../utils/getUserAddress"
 import PurchaseModal from "@/components/purchase-modal"
 import { useLandContract } from "../../../utils/use-land-contract"
+import { balanceOf } from "thirdweb/extensions/erc20"
 // Define tile types and data
 type TileStatus = "available" | "owned" | "active" | "inactive" | "forSale"
 type CropType = "wheat" | "corn" | "potato" | "carrot" | "none"
@@ -104,13 +104,17 @@ export default function FarmPage() {
    
 
   const handleApproveTokens = async (): Promise<boolean> => {
-    const tileprice =await readContract({
-            contract:mainContract,
-            method: "pricePerTile",
+      const balance = await balanceOf({
+        contract: SEEDTokenContract,
+        address: address
+      })
+    // const tileprice =await readContract({
+    //         contract:mainContract,
+    //         method: "pricePerTile",
             
-        });
+    //     });
     if (!selectedTile) return false
-    return await approveTokens(tileprice)
+    return await approveTokens(balance)
   }
 
   const handleTileClick = (tile: Tile) => {

@@ -1,7 +1,7 @@
 import { readContract } from "thirdweb";
 import { mainContract } from "@/app/contract";
 
-export const getTileDetails = async ( tileId: bigint) => {
+export const getTileDetails = async ( tileId: number) => {
     try {
         const tileData = await readContract({
             contract:mainContract,
