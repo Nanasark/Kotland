@@ -62,6 +62,8 @@ export const generateTiles = async (rows: number, columns: number, userAddress: 
       const isForSale = tileDetails?.forSale || false
       const listedPrice = tileDetails?.price || BigInt(0)
       const isBeingUsed = tileDetails?.isBeingUsed || false;
+      const crop = tileDetails?.cropType || 0
+      const tileCrop = crop == 1? "wheat" : crop ==2? "corn": crop ==3?"potato":crop == 4 ? "carrot" : "none"
       const forSale = tileDetails?.forSale || false;
 
       console.log(`Tile ${i} - Exists: ${tileExists}, Owner: ${tileOwner}, For Sale: ${forSale}, Active: ${isBeingUsed}`);
@@ -82,7 +84,7 @@ export const generateTiles = async (rows: number, columns: number, userAddress: 
             id: i,
             status: "owned",
             owner: tileOwner,
-            cropType: "none",
+            cropType: tileCrop,
             fertility: Number(tileFertility) ,
             waterLevel: Number(tileWaterLevel),
             sunlight: 50 + Math.floor(Math.random() * 50),
@@ -103,8 +105,8 @@ export const generateTiles = async (rows: number, columns: number, userAddress: 
             id: i,
             status: "active",
             owner: currentUser,
-            cropType: "none",
-             fertility: Number(tileFertility) ,
+            cropType:tileCrop,
+            fertility: Number(tileFertility),
             waterLevel: Number(tileWaterLevel),
             sunlight: 50 + Math.floor(Math.random() * 50),
           });

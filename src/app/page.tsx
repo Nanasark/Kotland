@@ -99,7 +99,7 @@ export default function Home() {
         </div>
 
         <div className="max-w-2xl mx-auto">
-          <Link href="/maps">
+          <Link href="#">
             <MapCard
               id="maps"
               name="City Maps Collection"

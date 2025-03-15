@@ -10,8 +10,8 @@ export function useLandContract() {
 
 
 
-
-  const {mutateAsync:approval,isError:isApprovalError, isSuccess:isApprovalSuccess ,status: approvalStatus} = useSendTransaction()
+// isError:isApprovalError, isSuccess:isApprovalSuccess ,status: approvalStatus
+  const {mutateAsync:approval,} = useSendTransaction()
   const approveTokens = async ( amount:bigint): Promise<boolean> => {
     try {
         
@@ -112,10 +112,61 @@ export function useLandContract() {
    
   }
 
+
+  const {mutateAsync: plant,isError:isPlantError, isSuccess:isPlantSuccess ,status: plantStatus} = useSendTransaction()
+
+   const plantCrop = async (tileId: number, crop: number): Promise<boolean> => {
+
+    try {
+        
+        const transaction =  prepareContractCall({
+         contract: mainContract,
+         method: "plantCrop",
+         params:[Number(tileId),crop]
+   
+       }) as PreparedTransaction;
+       
+       await plant(transaction)
+       
+       if ((plantStatus === "success" || isPlantSuccess) && !isPlantError)
+
+       
+        {
+    
+           return true
+       }
+       else{
+        return false
+       }
+         
+       
+       } catch (error) {
+       console.log(error)
+       return false
+       }
+   
+  }
+  const buildFactory = async (tileId: number): Promise<boolean> => {
+    try {
+      // In a real app, you would call the land contract's buildFactory function
+      console.log(`Building factory on tile ID: ${tileId}`)
+
+      // Simulate a delay for the building transaction
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      return true
+    } catch (error) {
+      console.error("Failed to build factory:", error)
+      return false
+    }
+  }
+
   return {
     approveTokens,
     purchaseTile,
-    listTile
+    listTile,
+    buildFactory,
+    plantCrop
   }
 }
 
