@@ -4,6 +4,7 @@ import { useSendTransaction } from "thirdweb/react"
 import { approve } from "thirdweb/extensions/erc20"
 import { SEEDTokenContract } from "@/app/contract"
 import { mainContract } from "@/app/contract"
+import { getTileDetails } from "./getTileDetails"
 
 export function useLandContract() {
 
@@ -42,10 +43,15 @@ export function useLandContract() {
   const {mutateAsync: sendPurchase,isError:isPurchaseError, isSuccess:isPurchaseSuccess ,status: purchaseStatus} = useSendTransaction()
 
   const purchaseTile = async (tileId: number): Promise<boolean> => {
-   try {
-          const transaction =  prepareContractCall({
+
+    try {
+
+      const tileDetails = await getTileDetails(tileId)
+     
+        const method = tileDetails?.forSale ? "buyListedTile" : "buyNewTile"
+        const transaction =  prepareContractCall({
          contract: mainContract,
-         method: "buyNewTile",
+         method: method,
          params:[Number(tileId)]
    
        }) as PreparedTransaction;

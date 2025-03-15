@@ -60,7 +60,7 @@ export const generateTiles = async (rows: number, columns: number, userAddress: 
       const tileFertility = tileDetails?.fertility || "0"
       const tileWaterLevel = tileDetails?.waterLevel || "0"
       const isForSale = tileDetails?.forSale || false
-      // const listedPrice = tileDetails?.price || "0"
+      const listedPrice = tileDetails?.price || BigInt(0)
       const isBeingUsed = tileDetails?.isBeingUsed || false;
       const forSale = tileDetails?.forSale || false;
 
@@ -86,6 +86,7 @@ export const generateTiles = async (rows: number, columns: number, userAddress: 
             fertility: Number(tileFertility) ,
             waterLevel: Number(tileWaterLevel),
             sunlight: 50 + Math.floor(Math.random() * 50),
+            
           });
         } else if (tileOwner === userAddress && !isBeingUsed && !isForSale ) {
           tiles.push({
@@ -117,6 +118,7 @@ export const generateTiles = async (rows: number, columns: number, userAddress: 
              fertility: Number(tileFertility) ,
             waterLevel: Number(tileWaterLevel),
             sunlight: 50 + Math.floor(Math.random() * 50),
+            purchasePrice: Number(toEther(listedPrice))
           });
         }
       }

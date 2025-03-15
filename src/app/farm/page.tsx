@@ -136,9 +136,10 @@ export default function FarmPage() {
     }
   }
 
-   const handleCompletePurchase = async (): Promise<boolean> => {
+  const handleCompletePurchase = async (): Promise<boolean> => {
     if (!selectedTile) return false
 
+    
      const success = await purchaseTile(selectedTile.id)
      await fetchTiles()
      if (success === true) {
@@ -148,18 +149,18 @@ export default function FarmPage() {
   }
 
   const handleListForSale = async (price: number): Promise<boolean> => {
-    if (!selectedTile) return false
+      if (!selectedTile) return false
 
    
-console.log("Received in parent:", price);
+      console.log("Received in parent:", price);
 
-    const success = await listTile(selectedTile.id, price)
+      const success = await listTile(selectedTile.id, price)
 
-    await fetchTiles()
-     if (success === true) {
-       await fetchTiles()
-     }
-    return success
+      await fetchTiles()
+      if (success === true) {
+        await fetchTiles()
+      }
+      return success
   }
  
 
@@ -664,7 +665,9 @@ console.log("Received in parent:", price);
                         </div>
                       </div>
 
-                      <button className="w-full mt-4 bg-purple-400 hover:bg-purple-500 text-white py-2 rounded-lg font-medium transition-colors">
+                      <button
+                      onClick={handlePurchaseTile}
+                                className="w-full mt-4 bg-purple-400 hover:bg-purple-500 text-white py-2 rounded-lg font-medium transition-colors">
                         Buy From Owner
                       </button>
                     </div>
