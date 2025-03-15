@@ -1,5 +1,5 @@
 "use client"
-import { prepareContractCall, PreparedTransaction } from "thirdweb"
+import { prepareContractCall, PreparedTransaction, toWei } from "thirdweb"
 import { useSendTransaction } from "thirdweb/react"
 import { approve } from "thirdweb/extensions/erc20"
 import { SEEDTokenContract } from "@/app/contract"
@@ -71,9 +71,45 @@ export function useLandContract() {
    
   }
 
+    const {mutateAsync: listTileForSale,isError:isListingTileError, isSuccess:isListingTileSuccess ,status: listingStatus} = useSendTransaction()
+
+  const listTile = async (tileId: number, price: number): Promise<boolean> => {
+    console.log(price)
+    if (price < 3) {
+      throw new Error("Price not here")
+    }
+   try {
+          const transaction =  prepareContractCall({
+         contract: mainContract,
+         method: "listTileForSale",
+         params:[Number(tileId), toWei(`${price}`)]
+   
+       }) as PreparedTransaction;
+        await listTileForSale(transaction)
+       
+       if ((listingStatus=== "success" || isListingTileSuccess) && !isListingTileError)
+
+       
+        {
+    
+           return true
+       }
+       else{
+        return false
+       }
+         
+       
+       } catch (error) {
+       console.log(error)
+       return false
+       }
+   
+  }
+
   return {
     approveTokens,
     purchaseTile,
+    listTile
   }
 }
 

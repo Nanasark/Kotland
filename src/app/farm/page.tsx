@@ -11,6 +11,8 @@ import { GetUserAddress } from "../../../utils/getUserAddress"
 import PurchaseModal from "@/components/purchase-modal"
 import { useLandContract } from "../../../utils/use-land-contract"
 import { balanceOf } from "thirdweb/extensions/erc20"
+import ListForSaleModal from "@/components/list-for-sale-modal"
+
 // Define tile types and data
 type TileStatus = "available" | "owned" | "active" | "inactive" | "forSale"
 type CropType = "wheat" | "corn" | "potato" | "carrot" | "none"
@@ -79,13 +81,15 @@ const userNFTs = [
 ]
 
 export default function FarmPage() {
-    const { approveTokens, purchaseTile } = useLandContract()
+    const { approveTokens, purchaseTile, listTile } = useLandContract()
 
   const [tiles, setTiles] = useState<Tile[]>([])
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobileStatsOpen, setIsMobileStatsOpen] = useState(false)
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false)
+    const [isListForSaleModalOpen, setIsListForSaleModalOpen] = useState(false)
+
 
     const fetchTiles = async () => {
     const generatedTiles = await generateTiles(8, 10, address); // Await the async function
@@ -143,6 +147,20 @@ export default function FarmPage() {
     return success
   }
 
+  const handleListForSale = async (price: number): Promise<boolean> => {
+    if (!selectedTile) return false
+
+   
+console.log("Received in parent:", price);
+
+    const success = await listTile(selectedTile.id, price)
+
+    await fetchTiles()
+     if (success === true) {
+       await fetchTiles()
+     }
+    return success
+  }
  
 
   // Update the handlePlantCrop function to change status to active
@@ -169,6 +187,19 @@ export default function FarmPage() {
           sunlight={selectedTile.sunlight}
           onApprove={handleApproveTokens}
           onPurchase={handleCompletePurchase}
+        />
+      )}
+
+      
+      {selectedTile && (
+        <ListForSaleModal
+          isOpen={isListForSaleModalOpen}
+          onClose={() => setIsListForSaleModalOpen(false)}
+          tileId={selectedTile.id}
+          fertility={selectedTile.fertility}
+          waterLevel={selectedTile.waterLevel}
+          sunlight={selectedTile.sunlight}
+          onListForSale={handleListForSale}
         />
       )}
 
@@ -545,7 +576,10 @@ export default function FarmPage() {
                       </div>
 
                       <div className="mt-4 pt-4 border-t border-gray-700">
-                        <button className="w-full bg-purple-400 hover:bg-purple-500 text-white py-2 rounded-lg font-medium transition-colors">
+                       <button
+                          onClick={() => setIsListForSaleModalOpen(true)}
+                          className="w-full bg-purple-400 hover:bg-purple-500 text-white py-2 rounded-lg font-medium transition-colors"
+                        >
                           List For Sale
                         </button>
                       </div>

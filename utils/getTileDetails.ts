@@ -1,7 +1,8 @@
 import { readContract } from "thirdweb";
 import { mainContract } from "@/app/contract";
 
-export const getTileDetails = async ( tileId: number) => {
+export const getTileDetails = async (tileId: number) => {
+   
     try {
         const tileData = await readContract({
             contract:mainContract,
@@ -10,16 +11,24 @@ export const getTileDetails = async ( tileId: number) => {
         });
 
         if (tileData !== null) {
-            const [id, owner, isBeingUsed, nftBeingUsed, nftIdBeingStaked, forSale,] = tileData;
+
+             const [id, owner, isBeingUsed,isCrop, cropType, factoryType, fertility,waterLevel, growthStage, forSale,price] = tileData;
 
             return {
                 id,
-                owner,
-                isBeingUsed,
-                nftBeingUsed,
-                nftIdBeingStaked,
-                forSale
+                owner,isBeingUsed,isCrop,
+               cropType, factoryType, fertility,waterLevel, growthStage, forSale,price
             };
+            // const [id, owner, isBeingUsed, nftBeingUsed, nftIdBeingStaked, forSale,] = tileData;
+
+            // return {
+            //     id,
+            //     owner,
+            //     isBeingUsed,
+            //     nftBeingUsed,
+            //     nftIdBeingStaked,
+            //     forSale
+            // };
         } else {
             console.log("Tile data is null");
             return null;
