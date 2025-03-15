@@ -11,7 +11,7 @@ interface MapCardProps {
   href?: string
 }
 
-export default function MapCard({ id, name, description, imageUrl, onClick, href }: MapCardProps) {
+export default function MapCard({ name, description, imageUrl, onClick, href }: MapCardProps) {
   const CardContent = () => (
     <div className="group relative overflow-hidden rounded-lg border border-[#4cd6e3]/30 bg-[#2a2339] transition-all hover:border-[#4cd6e3] hover:shadow-[0_0_15px_rgba(76,214,227,0.3)]">
       <div className="aspect-[16/9] relative overflow-hidden">
