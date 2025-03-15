@@ -3,12 +3,19 @@ import { chain } from "./chain";
 import { client } from "./clients";
 import { MainABI } from "./abi";
 import { SEEDTokenABI } from "./abi";
-import { EvolvingTomatoNFTABI } from "./abi";
+import { UtilsABI } from "./abi";
 export const mainContract = getContract({
-    address: "0xd51a290A31495c2317a44a9945887875e1C19230",
+    address: "0xFB7833940261F412AB8cB9e3346AE70E95Ff9295",
     chain: chain,
     client:client,
     abi:MainABI
+})
+
+export const utilsContract = getContract({
+    address: "0xB1046CF11EB36CBdB4222ddfef98E45DE53F7aC6",
+    chain: chain,
+    client: client,
+    abi: UtilsABI
 })
 
 
@@ -20,10 +27,3 @@ export const SEEDTokenContract = getContract({
 })
 
 
-
-export const EvolvingTomatoNFT = getContract({
-    address: "0xA3a2E757986E8e43f10833e112E212Dbad755F51",
-    chain: chain,
-    client: client,
-    abi: EvolvingTomatoNFTABI
-})
