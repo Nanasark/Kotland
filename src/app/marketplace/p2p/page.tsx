@@ -1,389 +1,385 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Search, Filter, ArrowUpDown, ChevronLeft } from "lucide-react"
-import Link from "next/link"
+import { ShoppingCart, Plus, Loader2, Search, ArrowUpDown, Tag } from "lucide-react"
 import Header from "@/components/Header"
-import { NFTCard } from "@/components/nft-card"
-import type { NFTItem, NFTCategory } from "@/app/types/marketplace"
+import ListAssetModal from "@/components/list-asset-modal"
+import BuyAssetModal from "@/components/buy-asset-modal"
+import { type MarketListing, getResourceImage } from "../../../../utils/types/marketplace"
+import { readContract, toEther } from "thirdweb"
+import { mainContract, SEEDTokenContract } from "@/app/contract"
+import { useLandContract } from "../../../../utils/use-land-contract"
+import { balanceOf } from "thirdweb/extensions/erc20"
+import { GetUserAddress } from "../../../../utils/getUserAddress"
 
-// Sample NFT data
-const nftItems: NFTItem[] = [
-  {
-    id: "seed-001",
-    name: "Premium Wheat Seeds",
-    description: "High-yield wheat seeds with frost resistance. Perfect for winter farming.",
-    price: 120,
-    currency: "SEED",
-    seller: "FarmKing",
-    category: "seeds",
-    rarity: "rare",
-    imageUrl: "/wheat1.jpeg",
-    attributes: [
-      { trait: "Growth Rate", value: "+15%" },
-      { trait: "Frost Resistance", value: "High" },
-      { trait: "Yield", value: "A+" },
-    ],
-    listedAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "seed-002",
-    name: "Exotic Corn Seeds",
-    description: "Rare corn variety with enhanced growth speed and higher market value.",
-    price: 250,
-    currency: "SEED",
-    seller: "SeedMaster",
-    category: "seeds",
-    rarity: "epic",
-    imageUrl: "/corn1.jpeg",
-    attributes: [
-      { trait: "Growth Rate", value: "+25%" },
-      { trait: "Drought Resistance", value: "Medium" },
-      { trait: "Yield", value: "A" },
-    ],
-    listedAt: new Date(Date.now() - 172800000).toISOString(),
-  },
-  {
-    id: "land-001",
-    name: "Fertile Valley Plot",
-    description: "Prime farming land with natural irrigation and rich soil. 10 acres.",
-    price: 1500,
-    currency: "SEED",
-    seller: "LandBaron",
-    category: "land",
-    rarity: "rare",
-    imageUrl: "/wheatfield.jpeg",
-    attributes: [
-      { trait: "Size", value: "10 acres" },
-      { trait: "Fertility", value: "A+" },
-      { trait: "Water Access", value: "Natural Spring" },
-    ],
-    listedAt: new Date(Date.now() - 259200000).toISOString(),
-  },
-  {
-    id: "land-002",
-    name: "Riverside Property",
-    description: "Strategic location with river access for efficient water management. 15 acres.",
-    price: 2200,
-    currency: "SEED",
-    seller: "EcoFarms",
-    category: "land",
-    rarity: "epic",
-    imageUrl: "/placeholder.svg?height=300&width=300&text=Riverside+Property",
-    attributes: [
-      { trait: "Size", value: "15 acres" },
-      { trait: "Fertility", value: "A" },
-      { trait: "Water Access", value: "River" },
-    ],
-    listedAt: new Date(Date.now() - 345600000).toISOString(),
-  },
-  {
-    id: "crop-001",
-    name: "Golden Wheat Harvest",
-    description: "Ready-to-sell wheat harvest with premium quality rating.",
-    price: 380,
-    currency: "SEED",
-    seller: "HarvestPro",
-    category: "crops",
-    rarity: "common",
-    imageUrl: "/wheat4.jpeg",
-    attributes: [
-      { trait: "Quantity", value: "500 units" },
-      { trait: "Quality", value: "Premium" },
-      { trait: "Harvest Date", value: "Recent" },
-    ],
-    listedAt: new Date(Date.now() - 432000000).toISOString(),
-  },
-  {
-    id: "crop-002",
-    name: "Organic Tomatoes Harvest",
-    description: "Certified organic tomatoes, freshly harvested and ready for market or processing.",
-    price: 420,
-    currency: "SEED",
-    seller: "OrganicGrower",
-    category: "crops",
-    rarity: "rare",
-    imageUrl: "/tomato4.jpeg",
-    attributes: [
-      { trait: "Quantity", value: "300 units" },
-      { trait: "Quality", value: "Organic" },
-      { trait: "Harvest Date", value: "Recent" },
-    ],
-    listedAt: new Date(Date.now() - 518400000).toISOString(),
-  },
-  {
-    id: "tool-001",
-    name: "Advanced Irrigation System",
-    description: "Smart irrigation system that optimizes water usage based on soil conditions.",
-    price: 850,
-    currency: "SEED",
-    seller: "TechFarm",
-    category: "tools",
-    rarity: "epic",
-    imageUrl: "/placeholder.svg?height=300&width=300&text=Irrigation+System",
-    attributes: [
-      { trait: "Efficiency", value: "+30%" },
-      { trait: "Coverage", value: "5 acres" },
-      { trait: "Smart Features", value: "Yes" },
-    ],
-    listedAt: new Date(Date.now() - 604800000).toISOString(),
-  },
-  {
-    id: "tool-002",
-    name: "Harvester Drone",
-    description: "Autonomous drone that assists in harvesting crops with precision and speed.",
-    price: 1200,
-    currency: "SEED",
-    seller: "DroneTech",
-    category: "tools",
-    rarity: "legendary",
-    imageUrl: "/placeholder.svg?height=300&width=300&text=Harvester+Drone",
-    attributes: [
-      { trait: "Speed", value: "+50%" },
-      { trait: "Battery Life", value: "8 hours" },
-      { trait: "AI Capabilities", value: "Advanced" },
-    ],
-    listedAt: new Date(Date.now() - 691200000).toISOString(),
-  },
-]
+// Mock function to simulate contract interaction
+// const fetchMarketListings = async (): Promise<MarketListing[]> => {
+//   try {
+//     console.log("Fetching market listings...")
 
-const categories: NFTCategory[] = [
-  { id: "all", name: "All Items", icon: "🌐" },
-  { id: "seeds", name: "Seeds", icon: "🌱" },
-  { id: "land", name: "Land", icon: "🏞️" },
-  { id: "crops", name: "Crops", icon: "🌽" },
-  { id: "tools", name: "Tools", icon: "🔧" },
-]
+//     // This would be replaced with actual contract call in production
+//     // Simulating the data structure you provided
+//     const mockData = [
+//       [BigInt(1), BigInt(2), BigInt(3)], // listingIds
+//       ["0x123...456", "0x789...abc", "0xdef...123"], // sellers
+//       [BigInt(1), BigInt(2), BigInt(4)], // resourceTypes (Wheat, Corn, Carrot)
+//       [BigInt(100), BigInt(50), BigInt(75)], // amounts
+//       [BigInt(10), BigInt(15), BigInt(12)], // pricePerUnits
+//     ]
 
-export default function P2PMarketplace() {
-  const [activeCategory, setActiveCategory] = useState<string>("all")
-  const [searchQuery, setSearchQuery] = useState<string>("")
-  const [sortOption, setSortOption] = useState<string>("recent")
+//     const [listingIds, sellers, resourceTypes, amounts, pricePerUnits] = mockData
 
-  // Filter NFTs based on category and search query
-  const filteredNFTs = nftItems.filter((nft) => {
-    const matchesCategory = activeCategory === "all" || nft.category === activeCategory
-    const matchesSearch =
-      nft.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      nft.description.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesCategory && matchesSearch
-  })
+//     // Ensure data is correctly aligned by mapping indexes
+//     const listings = listingIds.map((id: bigint, index: number) => ({
+//       id: Number(id),
+//       seller: sellers[index],
+//       resourceType: getResourceTypeName(Number(resourceTypes[index])),
+//       amount: Number(amounts[index]),
+//       pricePerUnit: Number(pricePerUnits[index]),
+//     }))
 
-  // Sort NFTs based on selected option
-  const sortedNFTs = [...filteredNFTs].sort((a, b) => {
-    switch (sortOption) {
-      case "price-low":
-        return a.price - b.price
-      case "price-high":
-        return b.price - a.price
-      case "recent":
-      default:
-        return new Date(b.listedAt).getTime() - new Date(a.listedAt).getTime()
+//     console.log("Formatted listings:", listings)
+//     return listings
+//   } catch (error) {
+//     console.error("Error fetching market listings:", error)
+//     return []
+//   }
+// }
+
+const fetchMarketListings = async () => {
+  try {
+    console.log("Fetching market listings...");
+
+    const data = await readContract({
+      contract: mainContract,
+      method: "getAllMarketListings",
+      params: [],
+    });
+
+    console.log("Raw data from contract:", data);
+
+    if (!data || data.length !== 5) {
+      console.error("Unexpected data format", data);
+      return [];
     }
-  })
+
+    const [listingIds, sellers, resourceTypes, amounts, pricePerUnits] = data;
+
+    // Transform data into a structured array
+    const listings = listingIds.map((id: bigint, index: number) => ({
+      id: Number(id),
+      seller: sellers[index],
+      resourceType: getResourceTypeName(Number(resourceTypes[index])), // Convert enum to readable name
+      amount: Number(amounts[index]),
+      // pricePerUnit: Number(pricePerUnits[index]), // Convert BigInt to number
+      pricePerUnit: Number(toEther(pricePerUnits[index])),
+    }));
+
+    console.log("Formatted listings:", listings);
+    return listings;
+  } catch (error) {
+    console.error("Error fetching market listings:", error);
+    return [];
+  }
+};
+
+
+// Helper function to get resource type name
+const getResourceTypeName = (resourceType: number): string => {
+  const resourceNames = ["None", "Wheat", "Corn", "Potato", "Carrot", "Food", "Energy", "Factory Goods", "Fertilizer"]
+
+  return resourceNames[resourceType] || "Unknown"
+}
+
+// Mock user resources for the list asset modal
+const mockUserResources = [
+  { type: "Wheat", amount: 200 },
+  { type: "Corn", amount: 150 },
+  { type: "Potato", amount: 100 },
+  { type: "Carrot", amount: 80 },
+  { type: "Food", amount: 50 },
+  { type: "Energy", amount: 30 },
+  { type: "Factory Goods", amount: 20 },
+  { type: "Fertilizer", amount: 10 },
+]
+
+export default function P2PMarketplacePage() {
+      const { approveTokens, buyResource, listResource} = useLandContract()
+  
+  const [listings, setListings] = useState<MarketListing[]>([])
+  const [filteredListings, setFilteredListings] = useState<MarketListing[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [sortField, setSortField] = useState<string>("id")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const address = GetUserAddress()
+  // Modal states
+  const [isListAssetModalOpen, setIsListAssetModalOpen] = useState(false)
+  const [isBuyAssetModalOpen, setIsBuyAssetModalOpen] = useState(false)
+  const [selectedListing, setSelectedListing] = useState<MarketListing | null>(null)
+
+  useEffect(() => {
+    const loadListings = async () => {
+      setIsLoading(true)
+      try {
+        const data = await fetchMarketListings()
+        setListings(data)
+        setFilteredListings(data)
+      } catch (error) {
+        console.error("Failed to load listings:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadListings()
+  }, [])
+
+  useEffect(() => {
+    // Filter listings based on search term
+    const filtered = listings.filter((listing) => listing.resourceType.toLowerCase().includes(searchTerm.toLowerCase()))
+
+    // Sort listings
+    const sorted = [...filtered].sort((a, b) => {
+      const fieldA = a[sortField as keyof MarketListing]
+      const fieldB = b[sortField as keyof MarketListing]
+
+      if (typeof fieldA === "string" && typeof fieldB === "string") {
+        return sortDirection === "asc" ? fieldA.localeCompare(fieldB) : fieldB.localeCompare(fieldA)
+      }
+
+      // For numeric fields
+      return sortDirection === "asc" ? Number(fieldA) - Number(fieldB) : Number(fieldB) - Number(fieldA)
+    })
+
+    setFilteredListings(sorted)
+  }, [listings, searchTerm, sortField, sortDirection])
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      // Toggle direction if clicking the same field
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      // Set new field and default to ascending
+      setSortField(field)
+      setSortDirection("asc")
+    }
+  }
+
+  const handleOpenBuyModal = (listing: MarketListing) => {
+    setSelectedListing(listing)
+    setIsBuyAssetModalOpen(true)
+  }
+
+  // Mock functions for contract interactions
+  const handleListAsset = async (resourceType: number, amount: number, pricePerUnit: number): Promise<boolean> => {
+    console.log(`Listing asset: Type ${resourceType}, Amount ${amount}, Price ${pricePerUnit}`)
+    // Simulate contract call delay
+    
+    const success = await listResource(resourceType,amount, pricePerUnit)
+   
+    return success
+  }
+
+  const handleBuyAsset = async (listingId: number, amount: number): Promise<boolean> => {
+    console.log(`Buying asset: Listing ID ${listingId}, Amount ${amount}`)
+    const success = await buyResource(listingId,amount)
+   
+    return success
+     
+  }
+
+  const handleApproveTokens = async (amount: number): Promise<boolean> => {
+    console.log(`Approving tokens: Amount ${amount}`)
+  
+     const balance = await balanceOf({
+        contract: SEEDTokenContract,
+        address: address
+      })
+
+          return await approveTokens(balance)
+    // In a real app, this would call the token contract's approve method
+    return true
+  }
 
   return (
     <div className="min-h-screen bg-[#1a1528] text-white">
       <Header />
 
-      <div className="container mx-auto py-6">
-        {/* Breadcrumb */}
-        <div className="mb-6">
-          <Link
-            href="/marketplace"
-            className="flex items-center gap-2 text-[#4cd6e3] hover:text-[#4cd6e3]/80 transition-colors"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            <span>Back to Marketplace</span>
-          </Link>
-        </div>
+      {/* Modals */}
+      <ListAssetModal
+        isOpen={isListAssetModalOpen}
+        onClose={() => setIsListAssetModalOpen(false)}
+        onListAsset={handleListAsset}
+        userResources={mockUserResources}
+      />
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+      <BuyAssetModal
+        isOpen={isBuyAssetModalOpen}
+        onClose={() => setIsBuyAssetModalOpen(false)}
+        listing={selectedListing}
+        onApproveTokens={handleApproveTokens}
+        onBuyAsset={handleBuyAsset}
+      />
+
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">P2P Marketplace</h1>
-            <p className="text-gray-400">Buy and sell NFTs directly from other players</p>
+            <h1 className="text-2xl font-bold">P2P Marketplace</h1>
+            <p className="text-gray-400">Buy and sell resources with other players</p>
           </div>
-          <button className="mt-4 md:mt-0 bg-[#4cd6e3] hover:bg-[#3ac0cd] text-black py-2 px-4 rounded-lg font-medium transition-colors">
-            List Your NFT
-          </button>
-        </div>
 
-        {/* Search and Filter Bar */}
-        <div className="bg-[#2a2339] rounded-lg p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search NFTs..."
-                className="w-full pl-10 py-2 px-3 bg-[#1a1528] border border-[#4cd6e3]/20 focus:border-[#4cd6e3] rounded-lg text-white outline-none"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search resources..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-[#2a2339] border border-[#4cd6e3]/30 rounded-lg text-white focus:outline-none focus:border-[#4cd6e3]"
               />
             </div>
-            <div className="flex gap-2">
-              <div className="relative">
-                <select
-                  className="appearance-none bg-[#1a1528] border border-[#4cd6e3]/20 rounded-lg px-4 py-2 pr-10 text-white focus:outline-none focus:border-[#4cd6e3]"
-                  value={sortOption}
-                  onChange={(e) => setSortOption(e.target.value)}
-                >
-                  <option value="recent">Recently Listed</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                </select>
-                <ArrowUpDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-              </div>
-              <button className="flex items-center gap-2 border border-[#4cd6e3]/20 hover:bg-[#1a1528] hover:text-[#4cd6e3] px-3 py-2 rounded-lg transition-colors">
-                <Filter className="h-4 w-4" />
-                Filters
-              </button>
-            </div>
+
+            <button
+              onClick={() => setIsListAssetModalOpen(true)}
+              className="flex items-center justify-center gap-2 bg-[#4cd6e3] hover:bg-[#3ac0cd] text-black px-4 py-2 rounded-lg transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              List Asset
+            </button>
           </div>
         </div>
 
-        {/* Categories */}
-        <div className="mb-6">
-          <div className="bg-[#2a2339] p-1 rounded-lg inline-flex">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  activeCategory === category.id ? "bg-[#4cd6e3] text-black" : "text-gray-400 hover:text-white"
-                }`}
-              >
-                <span className="mr-2">{category.icon}</span>
-                {category.name}
-              </button>
-            ))}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 text-[#4cd6e3] animate-spin mb-4" />
+            <p className="text-gray-400">Loading marketplace listings...</p>
           </div>
-
-          <div className="mt-6">
-            {sortedNFTs.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {sortedNFTs.map((nft) => (
-                  <NFTCard key={nft.id} nft={nft} />
-                ))}
-              </div>
-            ) : (
-              <div className="bg-[#2a2339] rounded-lg p-8 text-center">
-                <p className="text-gray-400 mb-4">No NFTs found matching your criteria</p>
-                <button
-                  className="border border-[#4cd6e3] text-[#4cd6e3] hover:bg-[#4cd6e3]/10 px-4 py-2 rounded-lg transition-colors"
-                  onClick={() => {
-                    setSearchQuery("")
-                    setActiveCategory("all")
-                  }}
-                >
-                  Clear Filters
-                </button>
-              </div>
-            )}
+        ) : filteredListings.length === 0 ? (
+          <div className="bg-[#2a2339] rounded-lg p-8 text-center">
+            <Tag className="h-12 w-12 text-[#4cd6e3] mx-auto mb-4 opacity-50" />
+            <h3 className="text-xl font-medium mb-2">No listings found</h3>
+            <p className="text-gray-400 mb-6">
+              {searchTerm ? "No resources match your search criteria." : "The marketplace is empty right now."}
+            </p>
+            <button
+              onClick={() => setIsListAssetModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 bg-[#4cd6e3] hover:bg-[#3ac0cd] text-black px-4 py-2 rounded-lg transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Be the first to list an asset
+            </button>
           </div>
-        </div>
-
-        {/* Featured Collections */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">Featured Collections</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Collection Cards */}
-            <div className="bg-[#2a2339] border border-[#4cd6e3]/20 rounded-lg overflow-hidden group">
-              <div className="relative h-40">
-                <Image
-                  src="/placeholder.svg?height=400&width=600&text=Rare+Seeds+Collection"
-                  alt="Rare Seeds Collection"
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1a1528] to-transparent"></div>
-                <div className="absolute bottom-4 left-4">
-                  <h3 className="text-xl font-bold text-white">Rare Seeds Collection</h3>
-                </div>
-              </div>
-              <div className="p-4">
-                <p className="text-gray-400 text-sm mb-4">
-                  Exclusive collection of rare and exotic seeds with unique properties
-                </p>
-                <div className="flex justify-between items-center">
-                  <div className="text-sm">
-                    <span className="text-gray-400">Floor: </span>
-                    <span className="text-[#4cd6e3] font-medium">120 $SEED</span>
-                  </div>
-                  <span className="bg-purple-500/20 text-purple-400 text-xs px-2 py-1 rounded-full">8 items</span>
-                </div>
-              </div>
-              <div className="px-4 pb-4">
-                <button className="w-full bg-[#1a1528] hover:bg-[#4cd6e3]/10 text-[#4cd6e3] border border-[#4cd6e3]/30 py-2 rounded-lg transition-colors">
-                  View Collection
-                </button>
-              </div>
+        ) : (
+          <div className="bg-[#2a2339] rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-[#1a1528]">
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSort("id")}
+                    >
+                      <div className="flex items-center gap-1">
+                        ID
+                        {sortField === "id" && (
+                          <ArrowUpDown className={`h-3 w-3 ${sortDirection === "asc" ? "rotate-0" : "rotate-180"}`} />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSort("resourceType")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Resource
+                        {sortField === "resourceType" && (
+                          <ArrowUpDown className={`h-3 w-3 ${sortDirection === "asc" ? "rotate-0" : "rotate-180"}`} />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSort("amount")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Amount
+                        {sortField === "amount" && (
+                          <ArrowUpDown className={`h-3 w-3 ${sortDirection === "asc" ? "rotate-0" : "rotate-180"}`} />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSort("pricePerUnit")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Price Per Unit
+                        {sortField === "pricePerUnit" && (
+                          <ArrowUpDown className={`h-3 w-3 ${sortDirection === "asc" ? "rotate-0" : "rotate-180"}`} />
+                        )}
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Seller
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1a1528]">
+                  {filteredListings.map((listing) => (
+                    <tr key={listing.id} className="hover:bg-[#1a1528]/50">
+                      <td className="px-6 py-4 whitespace-nowrap">#{listing.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 relative flex-shrink-0 bg-[#2a2339] rounded-lg overflow-hidden">
+                            <Image
+                              src={getResourceImage(listing.resourceType) || "/placeholder.svg?height=80&width=80"}
+                              alt={listing.resourceType}
+                              fill
+                              className="object-contain p-1"
+                            />
+                          </div>
+                          <span>{listing.resourceType}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">{listing.amount}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-[#4cd6e3]">{listing.pricePerUnit} $SEED</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {listing.seller.substring(0, 6)}...{listing.seller.substring(listing.seller.length - 4)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <button
+                          onClick={() => handleOpenBuyModal(listing)}
+                          className="inline-flex items-center gap-1 bg-[#4cd6e3]/10 hover:bg-[#4cd6e3]/20 text-[#4cd6e3] px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          <ShoppingCart className="h-3.5 w-3.5" />
+                          Buy
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          </div>
+        )}
 
-            <div className="bg-[#2a2339] border border-[#4cd6e3]/20 rounded-lg overflow-hidden group">
-              <div className="relative h-40">
-                <Image
-                  src="/placeholder.svg?height=400&width=600&text=Premium+Land+Plots"
-                  alt="Premium Land Plots"
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1a1528] to-transparent"></div>
-                <div className="absolute bottom-4 left-4">
-                  <h3 className="text-xl font-bold text-white">Premium Land Plots</h3>
-                </div>
-              </div>
-              <div className="p-4">
-                <p className="text-gray-400 text-sm mb-4">
-                  High-value land with special bonuses and strategic locations
-                </p>
-                <div className="flex justify-between items-center">
-                  <div className="text-sm">
-                    <span className="text-gray-400">Floor: </span>
-                    <span className="text-[#4cd6e3] font-medium">1,500 $SEED</span>
-                  </div>
-                  <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-1 rounded-full">5 items</span>
-                </div>
-              </div>
-              <div className="px-4 pb-4">
-                <button className="w-full bg-[#1a1528] hover:bg-[#4cd6e3]/10 text-[#4cd6e3] border border-[#4cd6e3]/30 py-2 rounded-lg transition-colors">
-                  View Collection
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-[#2a2339] border border-[#4cd6e3]/20 rounded-lg overflow-hidden group">
-              <div className="relative h-40">
-                <Image
-                  src="/placeholder.svg?height=400&width=600&text=Advanced+Farming+Tools"
-                  alt="Advanced Farming Tools"
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1a1528] to-transparent"></div>
-                <div className="absolute bottom-4 left-4">
-                  <h3 className="text-xl font-bold text-white">Advanced Farming Tools</h3>
-                </div>
-              </div>
-              <div className="p-4">
-                <p className="text-gray-400 text-sm mb-4">
-                  Cutting-edge tools and equipment to maximize your farm&apos;s efficiency
-                </p>
-                <div className="flex justify-between items-center">
-                  <div className="text-sm">
-                    <span className="text-gray-400">Floor: </span>
-                    <span className="text-[#4cd6e3] font-medium">850 $SEED</span>
-                  </div>
-                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-1 rounded-full">12 items</span>
-                </div>
-              </div>
-              <div className="px-4 pb-4">
-                <button className="w-full bg-[#1a1528] hover:bg-[#4cd6e3]/10 text-[#4cd6e3] border border-[#4cd6e3]/30 py-2 rounded-lg transition-colors">
-                  View Collection
-                </button>
-              </div>
-            </div>
+        <div className="mt-6 bg-[#2a2339] rounded-lg p-4">
+          <h2 className="text-lg font-medium mb-3">Marketplace Information</h2>
+          <div className="space-y-2 text-sm">
+            <p className="text-gray-400">
+              • The P2P marketplace allows players to trade resources directly with each other
+            </p>
+            <p className="text-gray-400">• All transactions are secured by smart contracts on the blockchain</p>
+            <p className="text-gray-400">• A 2% marketplace fee is applied to all transactions</p>
+            <p className="text-gray-400">• Listings expire after 7 days if not sold or canceled</p>
           </div>
         </div>
       </div>

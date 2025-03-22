@@ -161,12 +161,78 @@ export function useLandContract() {
     }
   }
 
+  const {mutateAsync: sendBuyResource,isError:isBuyResourceError, isSuccess:isBuyResourceSuccess ,status: BuyResourceStatus} = useSendTransaction()
+
+  const buyResource = async (listingId: number, quantity:number): Promise<boolean> => {
+
+    try {
+
+     
+        const transaction =  prepareContractCall({
+         contract: mainContract,
+         method: "buyListedResource",
+         params:[BigInt(listingId),BigInt(quantity)]
+   
+       }) as PreparedTransaction;
+       
+       await sendBuyResource(transaction)
+       
+       if ((BuyResourceStatus === "success" || isBuyResourceSuccess) && !isBuyResourceError){
+         return true
+       }
+       else{
+        return false
+       }
+
+       } catch (error) {
+       console.log(error)
+       return false
+       }
+   
+  }
+
+  const {mutateAsync: listResourceForSale,isError:isListingResourceError, isSuccess:isListingResourceSuccess ,status: listingResourceStatus} = useSendTransaction()
+
+  const listResource = async (resourceType: number,amount:number, price: number): Promise<boolean> => {
+    console.log(price)
+    if (price < 3) {
+      throw new Error("Price not here")
+    }
+   try {
+          const transaction =  prepareContractCall({
+         contract: mainContract,
+         method: "listResourceForSale",
+         params:[resourceType,amount, toWei(`${price}`)]
+   
+       }) as PreparedTransaction;
+        await listResourceForSale(transaction)
+       
+       if ((listingResourceStatus=== "success" || isListingResourceSuccess) && !isListingResourceError)
+       
+        {
+    
+           return true
+       }
+       else{
+        return false
+       }
+         
+       
+       } catch (error) {
+       console.log(error)
+       return false
+       }
+   
+  }
+
   return {
     approveTokens,
     purchaseTile,
     listTile,
     buildFactory,
-    plantCrop
+    plantCrop,
+    buyResource,
+    listResource
   }
 }
 
