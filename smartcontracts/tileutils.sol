@@ -33,14 +33,13 @@ contract TileUtils {
         BioFuelFactory
     }
 
-    string[4] public seasons = ["winter", "spring", "summer", "monsoon"];
-    uint8 public currentSeason = 0;
 
     constructor() {
         admin = msg.sender;
     }
 
     function setTileContract(address _TileContractAddress) external {
+        require(msg.sender == admin, "You are not authorized");
         tileDataContract = Tile(_TileContractAddress);
     }
 
@@ -70,6 +69,13 @@ contract TileUtils {
             return (uint8(ResourceType.CarrotAmount), 100);
         return (uint8(ResourceType.None), 0);
     }
+    string[4] public seasons = ["winter", "spring", "summer", "monsoon"];
+    uint8 public currentSeason = 0;
+    function updateSeason(uint8 season) external {
+        require(msg.sender == admin, "Not authorized");
+        currentSeason = season;
+    }
+
 
     function plantGrowthCalculator(
         uint8 cropType,
@@ -81,14 +87,14 @@ contract TileUtils {
         if (cropType == uint8(CropType.Wheat)) {
             growthRate = (currentSeason == 1)
                 ? 15
-                : ((currentSeason == 2 || currentSeason == 3) ? 10 : 3);
+                : ((currentSeason == 0 || currentSeason == 3) ? 10 : 3);
         } else if (cropType == uint8(CropType.Corn)) {
             growthRate = (currentSeason == 2)
                 ? 20
                 : (currentSeason == 1 ? 10 : 2);
         } else if (cropType == uint8(CropType.Potato)) {
             growthRate = (currentSeason == 0)
-                ? 12
+                ? 20
                 : (currentSeason == 1 ? 7 : 3);
         } else if (cropType == uint8(CropType.Carrot)) {
             growthRate = (currentSeason == 0)
@@ -98,11 +104,13 @@ contract TileUtils {
             growthRate = 0;
         }
 
-        return (fertility % growthRate) + (waterlevel % growthRate);
+        uint8 fertilityeffect = fertility/10;
+        uint8 watereffect = waterlevel /10;
+        uint8 growthPhase = growthRate * (1 + fertilityeffect /10) + watereffect;
+
+        return growthPhase;
     }
 
-
-    // call from frontend
     function produceFromFactory(uint256 tileId) external {
         (
             uint32 id,
@@ -375,5 +383,21 @@ contract TileUtils {
             40,
             true
         );
+    }
+
+
+
+    function _produceProductsFromAdmin() external {
+        require(msg.sender == admin, "Only admin can use this function");
+        tileDataContract.updateInventory(msg.sender, Tile.ResourceType.FertilizerAmount, 200, true);
+        tileDataContract.updateInventory(msg.sender, Tile.ResourceType.EnergyAmount, 200, true);
+        tileDataContract.updateInventory(msg.sender, Tile.ResourceType.WheatAmount, 200, true);
+        tileDataContract.updateInventory(msg.sender, Tile.ResourceType.CornAmount, 200, true);
+        tileDataContract.updateInventory(msg.sender, Tile.ResourceType.PotatoAmount, 200, true);
+        tileDataContract.updateInventory(msg.sender, Tile.ResourceType.CarrotAmount, 200, true);
+        tileDataContract.updateInventory(msg.sender, Tile.ResourceType.FoodAmount, 200, true);
+        tileDataContract.updateInventory(msg.sender, Tile.ResourceType.FactoryGoodsAmount, 200, true);
+
+
     }
 }

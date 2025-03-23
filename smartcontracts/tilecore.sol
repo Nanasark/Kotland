@@ -109,7 +109,10 @@ contract Tile {
         token = IERC20(_token);
         tileUtilsContract = _tileUtilsContract;
     }
-
+    function updateTileUtilsContract(address utilscontract) external onlyAdmin {
+        tileUtilsContract = utilscontract;
+    }
+    
     // -----------------------------------------------------
 
     // tile functions
@@ -561,6 +564,20 @@ contract Tile {
         ResourceType resource
     ) external view returns (uint256) {
         return users[user].inventory[uint8(resource)];
+    }
+
+
+    function getUserAllInventory(
+        address user
+    ) external view returns (uint64[] memory) {
+        uint8 totalResources = uint8(type(ResourceType).max) + 1; // Number of resource types
+        uint64[] memory inventoryData = new uint64[](totalResources);
+
+        for (uint8 i = 0; i < totalResources; i++) {
+            inventoryData[i] = users[user].inventory[i];
+        }
+
+        return inventoryData;
     }
 
 
