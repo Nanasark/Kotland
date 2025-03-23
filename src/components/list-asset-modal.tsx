@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { X, AlertCircle, Loader2 } from 'lucide-react'
-import { ResourceType, resourceTypeMap } from "../../utils/types/marketplace"
+import {  resourceTypeMap } from "../../utils/types/marketplace"
 
 interface ListAssetModalProps {
   isOpen: boolean

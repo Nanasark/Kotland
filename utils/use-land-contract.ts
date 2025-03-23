@@ -81,7 +81,7 @@ export function useLandContract() {
 
   const listTile = async (tileId: number, price: number): Promise<boolean> => {
     console.log(price)
-    if (price < 3) {
+    if (price < 0) {
       throw new Error("Price not here")
     }
    try {
@@ -195,7 +195,7 @@ export function useLandContract() {
 
   const listResource = async (resourceType: number,amount:number, price: number): Promise<boolean> => {
     console.log(price)
-    if (price < 3) {
+    if (price < 0) {
       throw new Error("Price not here")
     }
    try {

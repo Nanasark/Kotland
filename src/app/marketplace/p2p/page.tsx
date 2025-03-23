@@ -13,39 +13,47 @@ import { useLandContract } from "../../../../utils/use-land-contract"
 import { balanceOf } from "thirdweb/extensions/erc20"
 import { GetUserAddress } from "../../../../utils/getUserAddress"
 
-// Mock function to simulate contract interaction
-// const fetchMarketListings = async (): Promise<MarketListing[]> => {
-//   try {
-//     console.log("Fetching market listings...")
+const resourceNames = [
+  "None", // Will be skipped
+  "Wheat",
+  "Corn",
+  "Potato",
+  "Carrot",
+  "Food",
+  "Energy",
+  "Factory Goods",
+  "Fertilizer",
+];
 
-//     // This would be replaced with actual contract call in production
-//     // Simulating the data structure you provided
-//     const mockData = [
-//       [BigInt(1), BigInt(2), BigInt(3)], // listingIds
-//       ["0x123...456", "0x789...abc", "0xdef...123"], // sellers
-//       [BigInt(1), BigInt(2), BigInt(4)], // resourceTypes (Wheat, Corn, Carrot)
-//       [BigInt(100), BigInt(50), BigInt(75)], // amounts
-//       [BigInt(10), BigInt(15), BigInt(12)], // pricePerUnits
-//     ]
 
-//     const [listingIds, sellers, resourceTypes, amounts, pricePerUnits] = mockData
+const fetchUserInventory = async (userAddress: string) => {
+  try {
+    console.log("Fetching user inventory...");
 
-//     // Ensure data is correctly aligned by mapping indexes
-//     const listings = listingIds.map((id: bigint, index: number) => ({
-//       id: Number(id),
-//       seller: sellers[index],
-//       resourceType: getResourceTypeName(Number(resourceTypes[index])),
-//       amount: Number(amounts[index]),
-//       pricePerUnit: Number(pricePerUnits[index]),
-//     }))
+    const inventoryData: readonly bigint[] = await readContract({
+      contract: mainContract,
+      method: "getUserAllInventory",
+      params: [userAddress],
+    });
 
-//     console.log("Formatted listings:", listings)
-//     return listings
-//   } catch (error) {
-//     console.error("Error fetching market listings:", error)
-//     return []
-//   }
-// }
+    console.log("Raw inventory data:", inventoryData);
+
+    if (!inventoryData || inventoryData.length !== resourceNames.length) {
+      console.error("Unexpected inventory data format:", inventoryData);
+      return [];
+    }
+
+    // Map data, skipping "None" (index 0)
+    return inventoryData.slice(1).map((amount, index) => ({
+      type: resourceNames[index + 1], // Offset by 1 since we skipped "None"
+      amount: Number(amount),
+    }));
+  } catch (error) {
+    console.error("Error fetching user inventory:", error);
+    return [];
+  }
+};
+
 
 const fetchMarketListings = async () => {
   try {
@@ -93,16 +101,16 @@ const getResourceTypeName = (resourceType: number): string => {
 }
 
 // Mock user resources for the list asset modal
-const mockUserResources = [
-  { type: "Wheat", amount: 200 },
-  { type: "Corn", amount: 150 },
-  { type: "Potato", amount: 100 },
-  { type: "Carrot", amount: 80 },
-  { type: "Food", amount: 50 },
-  { type: "Energy", amount: 30 },
-  { type: "Factory Goods", amount: 20 },
-  { type: "Fertilizer", amount: 10 },
-]
+// const mockUserResources = [
+//   { type: "Wheat", amount: 200 },
+//   { type: "Corn", amount: 150 },
+//   { type: "Potato", amount: 100 },
+//   { type: "Carrot", amount: 80 },
+//   { type: "Food", amount: 50 },
+//   { type: "Energy", amount: 30 },
+//   { type: "Factory Goods", amount: 20 },
+//   { type: "Fertilizer", amount: 10 },
+// ]
 
 export default function P2PMarketplacePage() {
       const { approveTokens, buyResource, listResource} = useLandContract()
@@ -113,6 +121,7 @@ export default function P2PMarketplacePage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortField, setSortField] = useState<string>("id")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [inventory, setInventory] = useState<{ type: string; amount: number }[]>([]);
   const address = GetUserAddress()
   // Modal states
   const [isListAssetModalOpen, setIsListAssetModalOpen] = useState(false)
@@ -135,6 +144,15 @@ export default function P2PMarketplacePage() {
 
     loadListings()
   }, [])
+
+  useEffect(() => {
+    if (!address) return; // Prevent fetching if no userAddress
+
+    // setInventoryLoading(true);
+    fetchUserInventory(address)
+      .then(setInventory)
+      // .finally(() => setInventoryLoading(false));
+  }, [address]);
 
   useEffect(() => {
     // Filter listings based on search term
@@ -212,7 +230,7 @@ export default function P2PMarketplacePage() {
         isOpen={isListAssetModalOpen}
         onClose={() => setIsListAssetModalOpen(false)}
         onListAsset={handleListAsset}
-        userResources={mockUserResources}
+        userResources={inventory}
       />
 
       <BuyAssetModal
