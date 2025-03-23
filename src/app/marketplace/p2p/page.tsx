@@ -196,6 +196,7 @@ export default function P2PMarketplacePage() {
     // Simulate contract call delay
     
     const success = await listResource(resourceType,amount, pricePerUnit)
+    await fetchMarketListings()
    
     return success
   }
@@ -203,7 +204,7 @@ export default function P2PMarketplacePage() {
   const handleBuyAsset = async (listingId: number, amount: number): Promise<boolean> => {
     console.log(`Buying asset: Listing ID ${listingId}, Amount ${amount}`)
     const success = await buyResource(listingId,amount)
-   
+    await fetchMarketListings()
     return success
      
   }
