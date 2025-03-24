@@ -113,7 +113,10 @@ const getResourceTypeName = (resourceType: number): string => {
 // ]
 
 export default function P2PMarketplacePage() {
-      const { approveTokens, buyResource, listResource} = useLandContract()
+      const { approveTokens, buyResource, listResource
+
+
+      } = useLandContract()
   
   const [listings, setListings] = useState<MarketListing[]>([])
   const [filteredListings, setFilteredListings] = useState<MarketListing[]>([])

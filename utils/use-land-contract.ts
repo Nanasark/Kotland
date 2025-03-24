@@ -5,6 +5,7 @@ import { approve } from "thirdweb/extensions/erc20"
 import { SEEDTokenContract } from "@/app/contract"
 import { mainContract } from "@/app/contract"
 import { getTileDetails } from "./getTileDetails"
+import { readContract } from "thirdweb"
 
 export function useLandContract() {
 
@@ -225,6 +226,104 @@ export function useLandContract() {
    
   }
 
+  const {mutateAsync: water,isError:isWaterError, isSuccess:isWaterSuccess ,status: waterStatus} = useSendTransaction()
+
+  const waterCrop = async (tileId: number): Promise<boolean> => {
+
+   try {
+       
+       const transaction =  prepareContractCall({
+        contract: mainContract,
+        method: "waterCrop",
+        params:[Number(tileId)]
+  
+      }) as PreparedTransaction;
+      
+      await water(transaction)
+      
+      if ((waterStatus === "success" || isWaterSuccess) && !isWaterError)
+
+      
+       {
+   
+          return true
+      }
+      else{
+       return false
+      }
+        
+      
+      } catch (error) {
+      console.log(error)
+      return false
+      }
+  
+ }
+
+ const {mutateAsync: fertilize,isError:isFertilizeError, isSuccess:isFertilizeSuccess ,status: fertilizeStatus} = useSendTransaction()
+
+  const fertilizeCrop = async (tileId: number): Promise<boolean> => {
+
+   try {
+       
+       const transaction =  prepareContractCall({
+        contract: mainContract,
+        method: "fertilizeCrop",
+        params:[Number(tileId)]
+  
+      }) as PreparedTransaction;
+      
+      await fertilize(transaction)
+      
+      if ((fertilizeStatus === "success" || isFertilizeSuccess) && !isFertilizeError)
+
+      
+       {
+   
+          return true
+      }
+      else{
+       return false
+      }
+        
+      
+      } catch (error) {
+      console.log(error)
+      return false
+      }
+  
+ }
+
+ const canWater = async (address: string): Promise<boolean>=> {
+  try {
+    const wateredTimestamp =  await readContract({
+      contract: mainContract,
+      method: "lastWateredTime",
+      params: [address],
+    });
+
+    const currentTimestamp = BigInt(Math.floor(Date.now() / 1000)); // Convert current time to seconds (Unix timestamp)
+
+    return wateredTimestamp < currentTimestamp;
+  } catch (error) {
+    console.error("Error fetching last watered time:", error);
+    return false; // Default to false if there's an error
+  }
+};
+
+const fetchWateringTimestamp = async (tileId: number): Promise<bigint> => {
+  try {
+    return await readContract({
+      contract: mainContract,
+      method: "lastWateredTime",
+      params: [tileId],
+    });
+  } catch (error) {
+    console.error("Error fetching last watered time:", error);
+    return BigInt(0); // Default to 0 on error
+  }
+};
+
   return {
     approveTokens,
     purchaseTile,
@@ -232,7 +331,11 @@ export function useLandContract() {
     buildFactory,
     plantCrop,
     buyResource,
-    listResource
+    listResource,
+    waterCrop,
+    fertilizeCrop,
+    canWater,
+    fetchWateringTimestamp
   }
 }
 

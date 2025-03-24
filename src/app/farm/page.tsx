@@ -15,6 +15,7 @@ import ListForSaleModal from "@/components/list-for-sale-modal"
 import Image from "next/image"
 import PlantCropModal from "@/components/plant-crop-modal"
 import BuildFactoryModal from "@/components/build-factory-modal"
+import WaterButton from "@/components/water-button"
 
 // Define tile types and data
 type TileStatus = "available" | "owned" | "active" | "inactive" | "forSale"
@@ -86,7 +87,7 @@ const userNFTs = [
 ]
 
 export default function FarmPage() {
-    const { approveTokens, purchaseTile, listTile, buildFactory , plantCrop} = useLandContract()
+    const { approveTokens, purchaseTile, listTile, buildFactory , plantCrop, waterCrop, canWater, fetchWateringTimestamp} = useLandContract()
 
   const [tiles, setTiles] = useState<Tile[]>([])
  const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
@@ -98,13 +99,17 @@ export default function FarmPage() {
   const [isListForSaleModalOpen, setIsListForSaleModalOpen] = useState(false)
   const [isBuildFactoryModalOpen, setIsBuildFactoryModalOpen] = useState(false)
   const [isPlantCropModalOpen, setIsPlantCropModalOpen] = useState(false)
+  const [isWaterable,  setIswaterable] = useState(false)
 
 
-    const fetchTiles = async () => {
-    const generatedTiles = await generateTiles(8, 10, address); // Await the async function
-    setTiles(generatedTiles); // Update state with the resolved value
+  const fetchTiles = async () => {
+  const generatedTiles = await generateTiles(8, 10, address); // Await the async function
+  setTiles(generatedTiles); // Update state with the resolved value
   };
+
+
   const address = GetUserAddress()
+
   useEffect(() => {
   const fetchTiles = async () => {
     const generatedTiles = await generateTiles(8, 10, address); // Await the async function
@@ -114,7 +119,37 @@ export default function FarmPage() {
   fetchTiles();
   }, [address]);
 
-   
+  useEffect(() =>  {
+    const fetchCanWater = async () => {
+      const canWaters = await canWater(address);
+      setIswaterable(canWaters)
+    }
+    
+   fetchCanWater()
+    }, [address]);
+    
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  useEffect(() => {
+    if (!address) return;
+
+    const updateCountdown = async () => {
+      const wateredTimestamp = await fetchWateringTimestamp(address);
+      const currentTimestamp = Math.floor(Date.now() / 1000); // Convert to seconds
+
+      if (Number(wateredTimestamp) <= currentTimestamp) {
+        setTimeLeft(null);
+      } else {
+        setTimeLeft(Number(wateredTimestamp) - currentTimestamp);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000); // Update every second
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  });
+
+
 
   const handleApproveTokens = async (): Promise<boolean> => {
       const balance = await balanceOf({
@@ -824,10 +859,11 @@ export default function FarmPage() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 mt-4">
-                        <button className="p-2 bg-[#2a2339] hover:bg-[#4cd6e3]/10 border border-[#4cd6e3]/30 rounded-lg text-center text-xs transition-colors">
-                          <Droplets className="h-4 w-4 mx-auto mb-1 text-blue-400" />
-                          Water
-                        </button>
+                      <WaterButton
+                          isWaterable={isWaterable ?? false}
+                          timeLeft={timeLeft?? null}
+                          onWater={() => waterCrop(selectedTile.id)}
+                        />
                         <button className="p-2 bg-[#2a2339] hover:bg-[#4cd6e3]/10 border border-[#4cd6e3]/30 rounded-lg text-center text-xs transition-colors">
                           <Leaf className="h-4 w-4 mx-auto mb-1 text-green-400" />
                           Fertilize
