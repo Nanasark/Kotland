@@ -5,14 +5,14 @@ import { MainABI } from "./abi";
 import { SEEDTokenABI } from "./abi";
 import { UtilsABI } from "./abi";
 export const mainContract = getContract({
-    address: "0x9898f55E4F73E527D00D16881aeE014aD988934d",
+    address: "0xB8B8B2f742CA59058D315595c3dfc85d4E195813",
     chain: chain,
     client:client,
     abi:MainABI
 })
 
 export const utilsContract = getContract({
-    address: "0x75c95D066DAFBA8692044eF100C073ABfaAd9C29",
+    address: "0xB8B8B2f742CA59058D315595c3dfc85d4E195813",
     chain: chain,
     client: client,
     abi: UtilsABI

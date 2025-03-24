@@ -167,6 +167,7 @@ contract Tile {
         tile.forSale = true;
         tile.price = price;
         listedTilesForSale.add(tileId);
+        lastWateredTime[tileId] = 0;
         emit TileListed(tileId);
     }
 
@@ -253,17 +254,16 @@ contract Tile {
         user.userExperience += 20;
     }
 
-    mapping(address => uint256) public lastWateredTime;
-
+    mapping(uint32 => uint256) public lastWateredTime;
     function waterCrop(uint32 tileId) external onlyTileOwner(tileId) {
         require(tiles[tileId].isBeingUsed, "No crop here");
         require(
-            block.timestamp >= lastWateredTime[msg.sender] + 1 days,
+            block.timestamp >= lastWateredTime[tileId] + 1 days,
             "once in 24 hours"
         );
         tiles[tileId].waterLevel += 12;
         users[msg.sender].userExperience += 5;
-        lastWateredTime[msg.sender] = block.timestamp;
+        lastWateredTime[tileId] = block.timestamp;
         uint8 growth = ITileUtils(tileUtilsContract).plantGrowthCalculator(
             uint8(tiles[tileId].cropType),
             tiles[tileId].fertility,
