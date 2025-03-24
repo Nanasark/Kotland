@@ -124,7 +124,7 @@ export default function FarmPage() {
 
   useEffect(() => {
     const fetchWateringStatus = async () => {
-      if (!selectedTile || selectedTile.status !== "active" || selectedTile.owner !== "CryptoFarmer") {
+      if (!selectedTile || selectedTile.status !== "active") {
         setIsWaterable(false)
         setNextWateringTime(null)
         return
