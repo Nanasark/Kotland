@@ -294,12 +294,12 @@ export function useLandContract() {
   
  }
 
- const canWater = async (address: string): Promise<boolean>=> {
+ const canWater = async (tileId: number): Promise<boolean>=> {
   try {
     const wateredTimestamp =  await readContract({
       contract: mainContract,
       method: "lastWateredTime",
-      params: [address],
+      params: [tileId],
     });
 
     const currentTimestamp = BigInt(Math.floor(Date.now() / 1000)); // Convert current time to seconds (Unix timestamp)

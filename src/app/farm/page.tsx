@@ -99,7 +99,10 @@ export default function FarmPage() {
   const [isListForSaleModalOpen, setIsListForSaleModalOpen] = useState(false)
   const [isBuildFactoryModalOpen, setIsBuildFactoryModalOpen] = useState(false)
   const [isPlantCropModalOpen, setIsPlantCropModalOpen] = useState(false)
-  const [isWaterable,  setIswaterable] = useState(false)
+  
+  // Watering state
+  const [isWaterable, setIsWaterable] = useState(false)
+  const [nextWateringTime, setNextWateringTime] = useState<number | null>(null) 
 
 
   const fetchTiles = async () => {
@@ -119,35 +122,45 @@ export default function FarmPage() {
   fetchTiles();
   }, [address]);
 
-  useEffect(() =>  {
-    const fetchCanWater = async () => {
-      const canWaters = await canWater(address);
-      setIswaterable(canWaters)
-    }
-    
-   fetchCanWater()
-    }, [address]);
-    
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   useEffect(() => {
-    if (!address) return;
-
-    const updateCountdown = async () => {
-      const wateredTimestamp = await fetchWateringTimestamp(address);
-      const currentTimestamp = Math.floor(Date.now() / 1000); // Convert to seconds
-
-      if (Number(wateredTimestamp) <= currentTimestamp) {
-        setTimeLeft(null);
-      } else {
-        setTimeLeft(Number(wateredTimestamp) - currentTimestamp);
+    const fetchWateringStatus = async () => {
+      if (!selectedTile || selectedTile.status !== "active" || selectedTile.owner !== "CryptoFarmer") {
+        setIsWaterable(false)
+        setNextWateringTime(null)
+        return
       }
-    };
 
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000); // Update every second
+      try {
+        // Check if the tile can be watered using the tileId
+        const canWaterTile = await canWater(selectedTile.id)
+        setIsWaterable(canWaterTile)
 
-    return () => clearInterval(interval); // Cleanup on unmount
-  });
+        // If it can't be watered, get the next watering time
+        if (!canWaterTile) {
+          const nextTime = await fetchWateringTimestamp(selectedTile.id)
+          const currentTime = BigInt(Math.floor(Date.now() / 1000))
+
+          // Convert BigInt to number for the UI
+          const timeLeft = Number(nextTime - currentTime)
+
+          if (timeLeft > 0) {
+            setNextWateringTime(timeLeft)
+            console.log("Next watering in:", timeLeft, "seconds")
+          } else {
+            setNextWateringTime(null)
+          }
+        } else {
+          setNextWateringTime(null)
+        }
+      } catch (error) {
+        console.error("Error fetching watering status:", error)
+        setIsWaterable(false)
+        setNextWateringTime(null)
+      }
+    }
+
+    fetchWateringStatus()
+  }, [selectedTile])
 
 
 
@@ -860,8 +873,8 @@ export default function FarmPage() {
 
                       <div className="grid grid-cols-2 gap-2 mt-4">
                       <WaterButton
-                          isWaterable={isWaterable ?? false}
-                          timeLeft={timeLeft?? null}
+                          isWaterable={isWaterable}
+                          timeLeft={nextWateringTime}
                           onWater={() => waterCrop(selectedTile.id)}
                         />
                         <button className="p-2 bg-[#2a2339] hover:bg-[#4cd6e3]/10 border border-[#4cd6e3]/30 rounded-lg text-center text-xs transition-colors">
