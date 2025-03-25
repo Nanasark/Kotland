@@ -320,8 +320,9 @@ const fetchWateringTimestamp = async (tileId: number): Promise<bigint> => {
       method: "lastWateredTime",
       params: [tileId],
     });
-
-    return times
+    const oneDay = BigInt(86400); 
+    const nextTime = times+oneDay
+    return nextTime
   } catch (error) {
     console.error("Error fetching last watered time:", error);
     return BigInt(0); // Default to 0 on error

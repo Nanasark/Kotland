@@ -307,7 +307,7 @@ contract Tile {
         uint32 tileId,
         FactoryType factory
     ) external onlyTileOwner(tileId) {
-        TileData storage tile = tiles[tileId];
+        TileData storage tile = -tiles[tileId];
         require(!tile.isBeingUsed, "Already cooking something");
         require(
             token.transferFrom(msg.sender, address(this), factoryPrice),

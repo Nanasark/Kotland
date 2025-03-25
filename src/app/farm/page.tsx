@@ -124,40 +124,43 @@ export default function FarmPage() {
 
   useEffect(() => {
     const fetchWateringStatus = async () => {
+      console.log("Fetching watering status for tile:", selectedTile?.id)
+
       if (!selectedTile ) {
+        // console.log("Tile not eligible for watering:", {
+        //   tileId: selectedTile?.id,
+        //   status: selectedTile?.status,
+        //   owner: selectedTile?.owner,
+        // })
         setIsWaterable(false)
         setNextWateringTime(null)
         return
       }
 
       try {
-        // Check if the tile can be watered using the tileId
+        // Check if the tile can be watered
+        console.log("Checking if tile can be watered...")
         const canWaterTile = await canWater(selectedTile.id)
+        console.log("Can water tile result:", canWaterTile)
         setIsWaterable(canWaterTile)
-        console.log("Can water tile:", canWaterTile)
 
         // If it can't be watered, get the next watering time
         if (!canWaterTile) {
+          console.log("Tile cannot be watered, getting next watering time...")
           const nextTime = await fetchWateringTimestamp(selectedTile.id)
-          const currentTime = BigInt(Math.floor(Date.now() / 1000))
-
-          // Convert BigInt to number for the UI
-          const timeLeft = Number(nextTime - currentTime)
-          console.log("Next watering timestamp:", nextTime.toString())
-          console.log("Current timestamp:", currentTime.toString())
-          console.log("Time left (seconds):", timeLeft)
+          const currentTime = BigInt(Math.floor(Date.now() / 1000));
+          const timeLeft = nextTime - currentTime
+          console.log("Next watering time data:", { nextTime, currentTime, timeLeft })
 
           if (timeLeft > 0) {
-            setNextWateringTime(timeLeft)
+            console.log("Setting next watering time:", timeLeft)
+            setNextWateringTime(Number(timeLeft))
           } else {
-            // If time is up, we should be able to water, but let's set it to null for safety
+            console.log("No time left or negative time, setting to null")
             setNextWateringTime(null)
-            // If the contract says we can't water but the time is up, we might want to check again
-            if (!canWaterTile) {
-              console.log("Time is up but canWater returned false - this might be inconsistent")
-            }
           }
         } else {
+          console.log("Tile can be watered, setting next watering time to null")
           setNextWateringTime(null)
         }
       } catch (error) {
@@ -168,7 +171,7 @@ export default function FarmPage() {
     }
 
     fetchWateringStatus()
-  }, [selectedTile])
+  }, [selectedTile, address])
 
 
   const handleApproveTokens = async (): Promise<boolean> => {
