@@ -303,8 +303,10 @@ export function useLandContract() {
     });
 
     const currentTimestamp = BigInt(Math.floor(Date.now() / 1000)); // Convert current time to seconds (Unix timestamp)
-
-    return wateredTimestamp < currentTimestamp;
+    const oneDay = BigInt(86400); 
+    console.log("wateredTimestamp ", wateredTimestamp)
+    console.log("currentTimestamp ", currentTimestamp)
+    return currentTimestamp >= wateredTimestamp + oneDay
   } catch (error) {
     console.error("Error fetching last watered time:", error);
     return false; // Default to false if there's an error
@@ -313,11 +315,13 @@ export function useLandContract() {
 
 const fetchWateringTimestamp = async (tileId: number): Promise<bigint> => {
   try {
-    return await readContract({
+    const  times=await readContract({
       contract: mainContract,
       method: "lastWateredTime",
       params: [tileId],
     });
+
+    return times
   } catch (error) {
     console.error("Error fetching last watered time:", error);
     return BigInt(0); // Default to 0 on error

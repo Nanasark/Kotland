@@ -124,7 +124,7 @@ export default function FarmPage() {
 
   useEffect(() => {
     const fetchWateringStatus = async () => {
-      if (!selectedTile || selectedTile.status !== "active") {
+      if (!selectedTile ) {
         setIsWaterable(false)
         setNextWateringTime(null)
         return
@@ -134,6 +134,7 @@ export default function FarmPage() {
         // Check if the tile can be watered using the tileId
         const canWaterTile = await canWater(selectedTile.id)
         setIsWaterable(canWaterTile)
+        console.log("Can water tile:", canWaterTile)
 
         // If it can't be watered, get the next watering time
         if (!canWaterTile) {
@@ -142,12 +143,19 @@ export default function FarmPage() {
 
           // Convert BigInt to number for the UI
           const timeLeft = Number(nextTime - currentTime)
+          console.log("Next watering timestamp:", nextTime.toString())
+          console.log("Current timestamp:", currentTime.toString())
+          console.log("Time left (seconds):", timeLeft)
 
           if (timeLeft > 0) {
             setNextWateringTime(timeLeft)
-            console.log("Next watering in:", timeLeft, "seconds")
           } else {
+            // If time is up, we should be able to water, but let's set it to null for safety
             setNextWateringTime(null)
+            // If the contract says we can't water but the time is up, we might want to check again
+            if (!canWaterTile) {
+              console.log("Time is up but canWater returned false - this might be inconsistent")
+            }
           }
         } else {
           setNextWateringTime(null)
@@ -161,7 +169,6 @@ export default function FarmPage() {
 
     fetchWateringStatus()
   }, [selectedTile])
-
 
 
   const handleApproveTokens = async (): Promise<boolean> => {

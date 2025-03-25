@@ -85,7 +85,7 @@ export default function WaterButton({ isWaterable, timeLeft = null, onWater }: W
       )}
       <span className="text-xs">Water</span>
 
-      {!isWaterable && remainingTime !== null && remainingTime > 0 && (
+      {remainingTime !== null && remainingTime > 0 && (
         <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-[#1a1528] px-2 py-1 rounded text-xs text-gray-300 whitespace-nowrap flex items-center gap-1 border border-gray-700 z-10">
           <Clock className="h-3 w-3 text-gray-400" />
           <span>{formattedTime}</span>
