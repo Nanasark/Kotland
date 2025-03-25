@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Droplets, Sun, Box, LineChart, Leaf, Sprout, Tag, User, Factory, Building, Cloud } from "lucide-react"
+import {  Sun, Box, LineChart, Leaf, Sprout, Tag, User, Factory, Building, Cloud } from "lucide-react"
 import Header from "@/components/Header"
 import { generateTiles } from "../../../utils/generateTiles"
+import {  getResourceImage } from "../../../utils/types/marketplace"
 
 
-import {  SEEDTokenContract } from "../contract"
+import {  mainContract, SEEDTokenContract } from "../contract"
 import { GetUserAddress } from "../../../utils/getUserAddress"
 import PurchaseModal from "@/components/purchase-modal"
 import { useLandContract } from "../../../utils/use-land-contract"
@@ -16,6 +17,7 @@ import Image from "next/image"
 import PlantCropModal from "@/components/plant-crop-modal"
 import BuildFactoryModal from "@/components/build-factory-modal"
 import WaterButton from "@/components/water-button"
+import { readContract } from "thirdweb"
 
 // Define tile types and data
 type TileStatus = "available" | "owned" | "active" | "inactive" | "forSale"
@@ -54,37 +56,71 @@ const userStats: UserStats = {
   activeCrops: 6,
   harvestReady: 2,
 }
+const resourceNames = [
+  "None", // Will be skipped
+  "Wheat",
+  "Corn",
+  "Potato",
+  "Carrot",
+  "Food",
+  "Energy",
+  "Factory Goods",
+  "Fertilizer",
+];
 
-const userNFTs = [
-  {
-    id: 1,
-    name: "Premium Wheat Seeds",
-    quantity: 15,
-    rarity: "rare",
-    icon: Sun,
-  },
-  {
-    id: 2,
-    name: "Exotic Corn Seeds",
-    quantity: 8,
-    rarity: "epic",
-    icon: Sprout,
-  },
-  {
-    id: 3,
-    name: "Water Booster",
-    quantity: 5,
-    rarity: "uncommon",
-    icon: Droplets,
-  },
-  {
-    id: 4,
-    name: "Growth Accelerator",
-    quantity: 3,
-    rarity: "legendary",
-    icon: Leaf,
-  },
-]
+
+const fetchUserInventory = async (userAddress: string) => {
+  try {
+    console.log("Fetching user inventory...");
+
+    const inventoryData: readonly bigint[] = await readContract({
+      contract: mainContract,
+      method: "getUserAllInventory",
+      params: [userAddress],
+    });
+
+    console.log("Raw inventory data:", inventoryData);
+
+    if (!inventoryData || inventoryData.length !== resourceNames.length) {
+      console.error("Unexpected inventory data format:", inventoryData);
+      return [];
+    }
+
+    // Map data, skipping "None" (index 0)
+    return inventoryData.slice(1).map((amount, index) => ({
+      type: resourceNames[index + 1], // Offset by 1 since we skipped "None"
+      amount: Number(amount),
+    }));
+  } catch (error) {
+    console.error("Error fetching user inventory:", error);
+    return [];
+  }
+};
+
+
+// Add this helper function to get resource color by name instead of enum
+const getResourceColorByName = (resourceType: string): string => {
+  switch (resourceType) {
+    case "Wheat":
+      return "text-yellow-400 bg-yellow-400/20"
+    case "Corn":
+      return "text-green-400 bg-green-400/20"
+    case "Potato":
+      return "text-amber-700 bg-amber-700/20"
+    case "Carrot":
+      return "text-orange-400 bg-orange-400/20"
+    case "Food":
+      return "text-red-400 bg-red-400/20"
+    case "Energy":
+      return "text-blue-400 bg-blue-400/20"
+    case "Factory Goods":
+      return "text-purple-400 bg-purple-400/20"
+    case "Fertilizer":
+      return "text-emerald-400 bg-emerald-400/20"
+    default:
+      return "text-gray-400 bg-gray-400/20"
+  }
+}
 
 export default function FarmPage() {
     const { approveTokens, purchaseTile, listTile, buildFactory , plantCrop, waterCrop, canWater, fetchWateringTimestamp} = useLandContract()
@@ -93,6 +129,8 @@ export default function FarmPage() {
  const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobileStatsOpen, setIsMobileStatsOpen] = useState(false)
+    const [userInventory, setInventory] = useState<{ type: string; amount: number }[]>([]);
+  
 
   // Modal states
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false)
@@ -112,6 +150,15 @@ export default function FarmPage() {
 
 
   const address = GetUserAddress()
+
+    useEffect(() => {
+      if (!address) return; // Prevent fetching if no userAddress
+  
+      // setInventoryLoading(true);
+      fetchUserInventory(address)
+        .then(setInventory)
+        // .finally(() => setInventoryLoading(false));
+    }, [address]);
 
   useEffect(() => {
   const fetchTiles = async () => {
@@ -415,47 +462,41 @@ export default function FarmPage() {
               </div>
             </div>
 
-            {/* User NFTs */}
-            <div className="bg-[#2a2339] rounded-lg p-4">
-              <h3 className="text-sm font-medium mb-3">My NFTs</h3>
+                        {/* User Inventory - Using marketplace.ts approach */}
+                        <div className="bg-[#2a2339] rounded-lg p-4">
+              <h3 className="text-sm font-medium mb-3">Inventory</h3>
               <div className="space-y-3">
-                {userNFTs.map((nft) => (
+                {userInventory.map((item) => (
                   <div
-                    key={nft.id}
+                    key={item.type}
                     className="flex items-center justify-between p-2 rounded-lg bg-[#1a1528]/50 hover:bg-[#1a1528] transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <div
-                        className={`p-1.5 rounded-lg ${
-                          nft.rarity === "legendary"
-                            ? "bg-orange-500/20"
-                            : nft.rarity === "epic"
-                              ? "bg-purple-500/20"
-                              : nft.rarity === "rare"
-                                ? "bg-blue-500/20"
-                                : "bg-gray-500/20"
-                        }`}
-                      >
-                        <nft.icon
-                          className={`h-3.5 w-3.5 ${
-                            nft.rarity === "legendary"
-                              ? "text-orange-500"
-                              : nft.rarity === "epic"
-                                ? "text-purple-500"
-                                : nft.rarity === "rare"
-                                  ? "text-blue-500"
-                                  : "text-gray-500"
-                          }`}
+                      <div className="w-8 h-8 relative flex-shrink-0 rounded-lg overflow-hidden">
+                        <Image
+                          src={getResourceImage(item.type) || "/placeholder.svg"}
+                          alt={item.type}
+                          fill
+                          className="object-contain p-1"
                         />
                       </div>
                       <div>
-                        <div className="text-xs font-medium">{nft.name}</div>
-                        <div className="text-[10px] text-gray-400">x{nft.quantity}</div>
+                        <div className="text-xs font-medium">{item.type}</div>
+                        <div className={`text-[10px] ${getResourceColorByName(item.type).split(" ")[0]}`}>
+                          {item.amount} units
+                        </div>
                       </div>
                     </div>
-                    <div className="text-[10px] capitalize text-gray-400">{nft.rarity}</div>
+                    <div className={`px-2 py-1 rounded-full text-[10px] ${getResourceColorByName(item.type)}`}>
+                      {item.amount > 100 ? "High" : item.amount > 50 ? "Medium" : "Low"}
+                    </div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-4 pt-3 border-t border-gray-700">
+                <button className="w-full py-1.5 text-xs bg-[#1a1528] hover:bg-[#4cd6e3]/10 border border-[#4cd6e3]/30 rounded-lg text-[#4cd6e3] transition-colors">
+                  View All Resources
+                </button>
               </div>
             </div>
 
