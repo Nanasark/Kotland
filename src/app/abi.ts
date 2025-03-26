@@ -1194,51 +1194,12 @@ export const MainABI = [
 export const UtilsABI = [
 	{
 		"inputs": [],
-		"name": "_produceProductsFromAdmin",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "tileId",
-				"type": "uint256"
-			}
-		],
-		"name": "produceFromFactory",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_TileContractAddress",
-				"type": "address"
-			}
-		],
-		"name": "setTileContract",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"stateMutability": "nonpayable",
 		"type": "constructor"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint8",
-				"name": "season",
-				"type": "uint8"
-			}
-		],
-		"name": "updateSeason",
+		"inputs": [],
+		"name": "_produceProductsFromAdmin",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -1281,6 +1242,11 @@ export const UtilsABI = [
 				"internalType": "uint8",
 				"name": "cropType",
 				"type": "uint8"
+			},
+			{
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
 			}
 		],
 		"name": "getHarvestResourceAndAmount",
@@ -1296,7 +1262,20 @@ export const UtilsABI = [
 				"type": "uint8"
 			}
 		],
-		"stateMutability": "pure",
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "nftContract",
+		"outputs": [
+			{
+				"internalType": "contract INFTContract",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -1332,6 +1311,19 @@ export const UtilsABI = [
 		"inputs": [
 			{
 				"internalType": "uint256",
+				"name": "tileId",
+				"type": "uint256"
+			}
+		],
+		"name": "produceFromFactory",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
@@ -1348,6 +1340,32 @@ export const UtilsABI = [
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_nftContract",
+				"type": "address"
+			}
+		],
+		"name": "setNFTcontract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_TileContractAddress",
+				"type": "address"
+			}
+		],
+		"name": "setTileContract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "tileDataContract",
 		"outputs": [
@@ -1358,6 +1376,19 @@ export const UtilsABI = [
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint8",
+				"name": "season",
+				"type": "uint8"
+			}
+		],
+		"name": "updateSeason",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ] as const;
