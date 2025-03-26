@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 import "./tilecore.sol";
-
+interface INFTContract {
+    function balanceOf(address owner) external view returns (uint256);
+}
 contract TileUtils {
     Tile public tileDataContract;
     address admin;
+    INFTContract public nftContract;
 
     enum CropType {
         None,
@@ -37,6 +40,12 @@ contract TileUtils {
     constructor() {
         admin = msg.sender;
     }
+    function setNFTcontract(address _nftContract) external  {
+        require(msg.sender == admin, "only owner");
+
+        nftContract = INFTContract(_nftContract);
+    }
+
 
     function setTileContract(address _TileContractAddress) external {
         require(msg.sender == admin, "You are not authorized");
@@ -54,19 +63,20 @@ contract TileUtils {
         return currentPrice + increase;
     }
 
-    function getHarvestResourceAndAmount(uint8 cropType)
+    function getHarvestResourceAndAmount(uint8 cropType, address userAddress)
         external
-        pure
+        view
         returns (uint8 resourceType, uint8 amount)
     {
+        
         if (cropType == uint8(CropType.Wheat))
-            return (uint8(ResourceType.WheatAmount), 100);
+            return (uint8(ResourceType.WheatAmount), (nftContract.balanceOf(userAddress)) > 0 ? 120 : 100);
         if (cropType == uint8(CropType.Corn))
-            return (uint8(ResourceType.CornAmount), 100);
+            return (uint8(ResourceType.CornAmount), (nftContract.balanceOf(userAddress)) > 0 ? 150 : 100);
         if (cropType == uint8(CropType.Potato))
-            return (uint8(ResourceType.PotatoAmount), 100);
+            return (uint8(ResourceType.PotatoAmount), (nftContract.balanceOf(userAddress)) > 0 ? 180 : 100);
         if (cropType == uint8(CropType.Carrot))
-            return (uint8(ResourceType.CarrotAmount), 100);
+            return (uint8(ResourceType.CarrotAmount), (nftContract.balanceOf(userAddress)) > 0 ? 145 : 100);
         return (uint8(ResourceType.None), 0);
     }
     string[4] public seasons = ["winter", "spring", "summer", "monsoon"];
@@ -397,7 +407,5 @@ contract TileUtils {
         tileDataContract.updateInventory(msg.sender, Tile.ResourceType.CarrotAmount, 200, true);
         tileDataContract.updateInventory(msg.sender, Tile.ResourceType.FoodAmount, 200, true);
         tileDataContract.updateInventory(msg.sender, Tile.ResourceType.FactoryGoodsAmount, 200, true);
-
-
     }
 }

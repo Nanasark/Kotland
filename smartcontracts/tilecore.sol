@@ -21,7 +21,7 @@ interface ITileUtils {
     function getDynamicTilePrice() external pure returns (uint256 tilePrice);
 
     function getHarvestResourceAndAmount(
-        uint8 cropType
+        uint8 cropType, address userAddress
     ) external pure returns (uint8 resourceType, uint8 amount);
 
     function plantGrowthCalculator(
@@ -211,7 +211,7 @@ contract Tile {
 
     // -----------------------------------------------------
 
-    uint256 public cropPrice = 50 * 10 * 18;
+    uint256 public cropPrice = 50 * 10 ** 18;
 
     function plantCrop(
         uint32 tileId,
@@ -238,7 +238,7 @@ contract Tile {
         user.tilesUnderUse -= 1;
 
         (uint8 harvestedResource, uint8 amount) = ITileUtils(tileUtilsContract)
-            .getHarvestResourceAndAmount(uint8(tile.cropType));
+            .getHarvestResourceAndAmount(uint8(tile.cropType), msg.sender);
 
         if (harvestedResource != uint8(ResourceType.None)) {
             user.inventory[harvestedResource] += amount;
@@ -279,8 +279,8 @@ contract Tile {
         require(tiles[tileId].isBeingUsed, "No Crop here");
         require(tiles[tileId].fertility <= 100, "The land has max fertility");
         UserData storage user = users[msg.sender];
-        require(user.inventory[6] >= 100, "Purchase fertilizer");
-        user.inventory[6] -= 100;
+        require(user.inventory[8] >= 100, "Purchase fertilizer");
+        user.inventory[8] -= 100;
         TileData storage tile = tiles[tileId];
         tile.fertility = 100;
         user.userExperience += 5;
@@ -307,7 +307,7 @@ contract Tile {
         uint32 tileId,
         FactoryType factory
     ) external onlyTileOwner(tileId) {
-        TileData storage tile = -tiles[tileId];
+        TileData storage tile = tiles[tileId];
         require(!tile.isBeingUsed, "Already cooking something");
         require(
             token.transferFrom(msg.sender, address(this), factoryPrice),
