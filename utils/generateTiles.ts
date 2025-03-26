@@ -219,6 +219,7 @@ export const generateTiles = async (
         price = BigInt(0),
         isBeingUsed = false,
         cropType = 0,
+        growthStage = 0
       } = tileDetails || {};
 
       const tileCrop = cropTypes[cropType] || "none";
@@ -235,6 +236,7 @@ export const generateTiles = async (
           fertility: Number(fertility),
           waterLevel: Number(waterLevel),
           sunlight: 50 + Math.floor(Math.random() * 50),
+          growthStage:growthStage
         };
       } else if (owner === userAddress && !isBeingUsed && !forSale) {
         return {
@@ -245,6 +247,7 @@ export const generateTiles = async (
           fertility: Number(fertility),
           waterLevel: Number(waterLevel),
           sunlight: 50 + Math.floor(Math.random() * 50),
+          growthStage:growthStage
         };
       } else if (owner === userAddress && isBeingUsed) {
         return {
@@ -255,6 +258,7 @@ export const generateTiles = async (
           fertility: Number(fertility),
           waterLevel: Number(waterLevel),
           sunlight: 50 + Math.floor(Math.random() * 50),
+          growthStage:growthStage
         };
       } else {
         return {
@@ -266,6 +270,7 @@ export const generateTiles = async (
           waterLevel: Number(waterLevel),
           sunlight: 50 + Math.floor(Math.random() * 50),
           purchasePrice: Number(toEther(price)),
+          growthStage:growthStage
         };
       }
     } catch (error) {
