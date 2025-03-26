@@ -50,17 +50,15 @@ interface UserDetails{
   level:number
 }
 
-const userDetails:UserDetails= {
-
-  userAddress:"",
-  totalTilesOwned:0,
-  tilesUnderUse:0,
-  userExperience:0,
-  exists:false,
-  balance:0,
-  level:0,
-
-}
+const defaultUserDetails: UserDetails = {
+  userAddress: "",
+  totalTilesOwned: 0,
+  tilesUnderUse: 0,
+  userExperience: 0,
+  exists: false,
+  balance: 0,
+  level: 0,
+};
 
 
 
@@ -140,8 +138,7 @@ export default function FarmPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobileStatsOpen, setIsMobileStatsOpen] = useState(false)
     const [userInventory, setInventory] = useState<{ type: string; amount: number }[]>([]);
-  const [userDetail, setUserDetail] = useState<UserDetails >(userDetails)
-
+    const [userDetail, setUserDetail] = useState<UserDetails | null>(null);
   // Modal states
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false)
   const [isListForSaleModalOpen, setIsListForSaleModalOpen] = useState(false)
@@ -172,17 +169,16 @@ export default function FarmPage() {
 
     useEffect(() => {
       const fetchUserDetail = async () => {
-      const userData = await getUserDetails(address)
-      if(userData !== null){
-        setUserDetail(userData)
-      }
-    
-     
-
-
+        try {
+          const userData = await getUserDetails(address);
+          setUserDetail(userData ?? defaultUserDetails); // Use default if null
+        } catch (error) {
+          console.error("Failed to fetch user details:", error);
+          setUserDetail(defaultUserDetails);
+        }
     }     
 
-fetchUserDetail()
+      fetchUserDetail()
     }, [address])
 
   useEffect(() => {
@@ -448,7 +444,7 @@ fetchUserDetail()
                 </div>
                 <div className="text-center">
                   <h3 className="font-medium">CryptoFarmer</h3>
-                  <p className="text-xs text-[#4cd6e3]">Level {userDetail.level}</p>
+                  <p className="text-xs text-[#4cd6e3]">Level {userDetail?.level}</p>
                 </div>
               </div>
 
@@ -456,15 +452,15 @@ fetchUserDetail()
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Balance:</span>
-                  <span className="text-[#4cd6e3] font-medium">${userDetail.balance}</span>
+                  <span className="text-[#4cd6e3] font-medium">${userDetail?.balance}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Owned Tiles:</span>
-                  <span className="text-[#4cd6e3] font-medium">{userDetails.totalTilesOwned}</span>
+                  <span className="text-[#4cd6e3] font-medium">{userDetail?.totalTilesOwned}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Active Tiles:</span>
-                  <span className="text-[#4cd6e3] font-medium">{userDetails.tilesUnderUse}</span>
+                  <span className="text-[#4cd6e3] font-medium">{userDetail?.tilesUnderUse}</span>
                 </div>
                 {/* <div className="flex justify-between items-center">
                   <span className="text-sm">Ready to Harvest:</span>
@@ -476,12 +472,12 @@ fetchUserDetail()
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs">
                   <span>Experience</span>
-                  <span>{userDetails.userExperience} / 5000</span>
+                  <span>{userDetail?.userExperience} / 5000</span>
                 </div>
                 <div className="w-full h-2 bg-[#1a1528] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-[#4cd6e3] to-[#4cd6e3]/70"
-                    style={{ width: `${(userDetails.userExperience / 5000) * 100}%` }}
+                    style={{ width: `${((userDetail?.userExperience ?? 0) / 5000) * 100}%` }}
                   ></div>
                 </div>
               </div>
