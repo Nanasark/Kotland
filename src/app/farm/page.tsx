@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import {  Sun, Box, LineChart, Sprout, Tag, User, Factory, Building, Cloud } from "lucide-react"
 import Header from "@/components/Header"
 import { generateTiles } from "../../../utils/generateTiles"
+import {getUserDetails} from "../../../utils/getUserDetails"
 import {  getResourceImage } from "../../../utils/types/marketplace"
 
 
@@ -39,24 +40,32 @@ interface Tile {
   forSalePrice?: number
 }
 
-interface UserStats {
-  level: number
-  experience: number
-  balance: number
-  ownedTiles: number
-  activeCrops: number
-  harvestReady: number
+interface UserDetails{
+  userAddress:string;
+  totalTilesOwned:number;
+  tilesUnderUse:number
+  userExperience:number
+  exists:boolean
+  balance:number
+  level:number
+}
+
+const userDetails:UserDetails= {
+
+  userAddress:"",
+  totalTilesOwned:0,
+  tilesUnderUse:0,
+  userExperience:0,
+  exists:false,
+  balance:0,
+  level:0,
+
 }
 
 
-const userStats: UserStats = {
-  level: 12,
-  experience: 3450,
-  balance: 2500,
-  ownedTiles: 8,
-  activeCrops: 6,
-  harvestReady: 2,
-}
+
+
+
 const resourceNames = [
   "None", // Will be skipped
   "Wheat",
@@ -131,7 +140,7 @@ export default function FarmPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobileStatsOpen, setIsMobileStatsOpen] = useState(false)
     const [userInventory, setInventory] = useState<{ type: string; amount: number }[]>([]);
-  
+  const [userDetail, setUserDetail] = useState<UserDetails >(userDetails)
 
   // Modal states
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false)
@@ -160,6 +169,21 @@ export default function FarmPage() {
         .then(setInventory)
         // .finally(() => setInventoryLoading(false));
     }, [address]);
+
+    useEffect(() => {
+      const fetchUserDetail = async () => {
+      const userData = await getUserDetails(address)
+      if(userData !== null){
+        setUserDetail(userData)
+      }
+    
+     
+
+
+    }     
+
+fetchUserDetail()
+    }, [address])
 
   useEffect(() => {
   const fetchTiles = async () => {
@@ -424,7 +448,7 @@ export default function FarmPage() {
                 </div>
                 <div className="text-center">
                   <h3 className="font-medium">CryptoFarmer</h3>
-                  <p className="text-xs text-[#4cd6e3]">Level {userStats.level}</p>
+                  <p className="text-xs text-[#4cd6e3]">Level {userDetail.level}</p>
                 </div>
               </div>
 
@@ -432,32 +456,32 @@ export default function FarmPage() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Balance:</span>
-                  <span className="text-[#4cd6e3] font-medium">${userStats.balance}</span>
+                  <span className="text-[#4cd6e3] font-medium">${userDetail.balance}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Owned Tiles:</span>
-                  <span className="text-[#4cd6e3] font-medium">{userStats.ownedTiles}</span>
+                  <span className="text-[#4cd6e3] font-medium">{userDetails.totalTilesOwned}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Active Crops:</span>
-                  <span className="text-[#4cd6e3] font-medium">{userStats.activeCrops}</span>
+                  <span className="text-sm">Active Tiles:</span>
+                  <span className="text-[#4cd6e3] font-medium">{userDetails.tilesUnderUse}</span>
                 </div>
-                <div className="flex justify-between items-center">
+                {/* <div className="flex justify-between items-center">
                   <span className="text-sm">Ready to Harvest:</span>
-                  <span className="text-[#4cd6e3] font-medium">{userStats.harvestReady}</span>
-                </div>
+                  <span className="text-[#4cd6e3] font-medium">{userDetails.}</span>
+                </div> */}
               </div>
 
               {/* Experience Bar */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs">
                   <span>Experience</span>
-                  <span>{userStats.experience} / 5000</span>
+                  <span>{userDetails.userExperience} / 5000</span>
                 </div>
                 <div className="w-full h-2 bg-[#1a1528] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-[#4cd6e3] to-[#4cd6e3]/70"
-                    style={{ width: `${(userStats.experience / 5000) * 100}%` }}
+                    style={{ width: `${(userDetails.userExperience / 5000) * 100}%` }}
                   ></div>
                 </div>
               </div>
