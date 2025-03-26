@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {  Sun, Box, LineChart, Leaf, Sprout, Tag, User, Factory, Building, Cloud } from "lucide-react"
+import {  Sun, Box, LineChart, Sprout, Tag, User, Factory, Building, Cloud } from "lucide-react"
 import Header from "@/components/Header"
 import { generateTiles } from "../../../utils/generateTiles"
 import {  getResourceImage } from "../../../utils/types/marketplace"
@@ -18,6 +18,7 @@ import PlantCropModal from "@/components/plant-crop-modal"
 import BuildFactoryModal from "@/components/build-factory-modal"
 import WaterButton from "@/components/water-button"
 import { readContract } from "thirdweb"
+import FertilizeButton from "@/components/fertilize-button"
 
 // Define tile types and data
 type TileStatus = "available" | "owned" | "active" | "inactive" | "forSale"
@@ -123,7 +124,7 @@ const getResourceColorByName = (resourceType: string): string => {
 }
 
 export default function FarmPage() {
-    const { approveTokens, purchaseTile, listTile, buildFactory , plantCrop, waterCrop, canWater, fetchWateringTimestamp} = useLandContract()
+    const { approveTokens, purchaseTile, listTile, buildFactory , plantCrop, waterCrop, canWater, fetchWateringTimestamp,fertilizeCrop} = useLandContract()
 
   const [tiles, setTiles] = useState<Tile[]>([])
  const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
@@ -923,15 +924,22 @@ export default function FarmPage() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 mt-4">
+                      <div className="relative">
                       <WaterButton
                           isWaterable={isWaterable}
                           timeLeft={nextWateringTime}
                           onWater={() => waterCrop(selectedTile.id)}
                         />
-                        <button className="p-2 bg-[#2a2339] hover:bg-[#4cd6e3]/10 border border-[#4cd6e3]/30 rounded-lg text-center text-xs transition-colors">
-                          <Leaf className="h-4 w-4 mx-auto mb-1 text-green-400" />
-                          Fertilize
-                        </button>
+                        </div>
+                        <div className="relative">
+                          <FertilizeButton
+                            canFertilize={true} 
+                            fertilizerAmount={userInventory.find(item => item.type === "Fertilizer")?.amount || 0}
+                            tileHasCrop={selectedTile?.status === "active"}
+                            currentFertility={selectedTile?.fertility || 0}
+                            onFertilize={()=>fertilizeCrop(selectedTile.id)}
+                          />
+                        </div>
                       </div>
                     </div>
                   ) : selectedTile.status === "owned" ? (

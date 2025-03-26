@@ -89,14 +89,14 @@ export default function WaterButton({ isWaterable, timeLeft = null, onWater }: W
         )}
         <span className="text-xs">Water</span>
         {!isWaterable && remainingTime !== null && (
-        <div className="   transform  bg-[#1a1528] px-2 py-1 rounded text-xs text-gray-300 whitespace-nowrap flex items-center gap-1 border border-gray-700 z-10 min-w-[90px] text-center">
+        <div className="   transform bg-[#1a1528] px-2 py-1 rounded text-xs text-gray-300 whitespace-nowrap flex items-center gap-1 border border-gray-700 z-10 min-w-[90px] text-center">
           <Clock className="h-3 w-3 text-gray-400" />
           <span>{formattedTime}</span>
         </div>
       )}
       </button>
 
-      {/* Timer display with improved visibility */}
+ 
      
      
      
