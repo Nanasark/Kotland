@@ -47,21 +47,21 @@ export enum ResourceType {
   export const getResourceImage = (resourceType: string): string => {
     switch (resourceType) {
       case "Wheat":
-        return "/resources/wheat4.jpeg"
+        return "/resources/wheat.jpeg"
       case "Corn":
-        return "/resources/corn.png"
+        return "/resources/corn.jpeg"
       case "Potato":
-        return "/resources/potato.png"
+        return "/resources/potato.jpeg"
       case "Carrot":
-        return "/resources/carrot.png"
+        return "/resources/carrot.jpeg"
       case "Food":
-        return "/resources/food.png"
+        return "/resources/food.jpeg"
       case "Energy":
-        return "/resources/energy.png"
+        return "/resources/energy.jpeg"
       case "Factory Goods":
-        return "/resources/factory-goods.png"
+        return "/resources/factorygood.jpeg"
       case "Fertilizer":
-        return "/resources/fertilizer.png"
+        return "/resources/fertilizer.jpeg"
       default:
         return "/placeholder.svg?height=80&width=80"
     }
