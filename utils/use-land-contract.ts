@@ -147,6 +147,40 @@ export function useLandContract() {
        }
    
   }
+
+  const {mutateAsync: harvest,isError:isHarvestError, isSuccess:isHarvestSuccess ,status: harvestStatus} = useSendTransaction()
+
+   const harvestCrop = async (tileId: number): Promise<boolean> => {
+
+    try {
+        
+        const transaction =  prepareContractCall({
+         contract: mainContract,
+         method: "harvestCrop",
+         params:[Number(tileId)]
+   
+       }) as PreparedTransaction;
+       
+       await harvest(transaction)
+       
+       if (( harvestStatus === "success" || isHarvestSuccess) && !isHarvestError)
+
+       
+        {
+    
+           return true
+       }
+       else{
+        return false
+       }
+         
+       
+       } catch (error) {
+       console.log(error)
+       return false
+       }
+   
+  }
   const buildFactory = async (tileId: number): Promise<boolean> => {
     try {
       // In a real app, you would call the land contract's buildFactory function
@@ -340,7 +374,8 @@ const fetchWateringTimestamp = async (tileId: number): Promise<bigint> => {
     waterCrop,
     fertilizeCrop,
     canWater,
-    fetchWateringTimestamp
+    fetchWateringTimestamp,
+    harvestCrop
   }
 }
 
