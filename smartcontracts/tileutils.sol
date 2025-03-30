@@ -315,7 +315,7 @@ contract TileUtils {
             user,
             Tile.ResourceType.FactoryGoodsAmount,
             20,
-            false
+            true
         );
     }
 

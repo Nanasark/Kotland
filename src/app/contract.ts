@@ -12,7 +12,7 @@ export const mainContract = getContract({
 })
 
 export const utilsContract = getContract({
-    address: "0x337205cb06e266E4dC09CEf4276aFa10DC757E76",
+    address: "0x33c7d610a8970F71207fAddf728F4c52d827029E",
     chain: chain,
     client: client,
     abi: UtilsABI
