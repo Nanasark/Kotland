@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {  Sun, Box, LineChart, Sprout, Tag, User, Factory, Building, Cloud } from "lucide-react"
+import {  Sun,  LineChart, Sprout, Tag, User, Factory, Building, Cloud } from "lucide-react"
 import Header from "@/components/Header"
 import { generateTiles } from "../../../utils/generateTiles"
 import {getUserDetails} from "../../../utils/getUserDetails"
@@ -21,22 +21,24 @@ import WaterButton from "@/components/water-button"
 import { readContract } from "thirdweb"
 import FertilizeButton from "@/components/fertilize-button"
 import HarvestButton from "@/components/harvest-button"
+import ProduceFromFactoryModal from "@/components/produce-from-factory-modal"
 
 // Define tile types and data
 type TileStatus = "available" | "owned" | "active" | "inactive" | "forSale"
 type CropType = "wheat" | "corn" | "potato" | "carrot" | "none"
-type BuildingType = "none" | "factory" | "greenhouse" | "warehouse"
+type FactoryType = "FoodFactory" | "EnergyFactory" | "Bakery" | "JuiceFactory" | "BioFuelFactory" | "None"
 
 interface Tile {
   id: number
   status: TileStatus
   cropType: CropType
-  buildingType?: BuildingType
+  factoryType: FactoryType
   growthStage?: number
   fertility?: number
   waterLevel?: number
   sunlight?: number
   purchasePrice?: number
+  isCrop: boolean
   owner?: string
   forSalePrice?: number
 }
@@ -132,7 +134,7 @@ const getResourceColorByName = (resourceType: string): string => {
 }
 
 export default function FarmPage() {
-    const { approveTokens, purchaseTile, listTile, buildFactory , plantCrop, waterCrop, canWater, fetchWateringTimestamp,fertilizeCrop,harvestCrop} = useLandContract()
+    const { approveTokens, purchaseTile, listTile, buildFactory , plantCrop, waterCrop, canWater, fetchWateringTimestamp,fertilizeCrop,harvestCrop, produceFromFactory} = useLandContract()
 
   const [tiles, setTiles] = useState<Tile[]>([])
  const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
@@ -143,24 +145,46 @@ export default function FarmPage() {
   // Modal states
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false)
   const [isListForSaleModalOpen, setIsListForSaleModalOpen] = useState(false)
-  const [isBuildFactoryModalOpen, setIsBuildFactoryModalOpen] = useState(false)
+  // const [isBuildFactoryModalOpen, setIsBuildFactoryModalOpen] = useState(false)
   const [isPlantCropModalOpen, setIsPlantCropModalOpen] = useState(false)
-  
+  const [modalStates, setModalStates] = useState({
+    isPurchaseModalOpen: false,
+    isListForSaleModalOpen: false,
+    isBuildFactoryModalOpen: false,
+    isPlantCropModalOpen: false,
+    isProduceModalOpen: false,
+  })
+
+  // Helper function to open a specific modal
+  const openModal = (modalName: keyof typeof modalStates) => {
+    setModalStates({
+      ...modalStates,
+      [modalName]: true,
+    })
+  }
+
+  const closeModal = (modalName: keyof typeof modalStates) => {
+    setModalStates({
+      ...modalStates,
+      [modalName]: false,
+    })
+  }
+
   // Watering state
   const [isWaterable, setIsWaterable] = useState(false)
   const [nextWateringTime, setNextWateringTime] = useState<number | null>(null) 
 
 
   const fetchTiles = async () => {
-  const generatedTiles = await generateTiles(8, 10, address); // Await the async function
-  setTiles(generatedTiles); // Update state with the resolved value
+  const generatedTiles = await generateTiles(8, 10, address); 
+  setTiles(generatedTiles); 
   };
 
 
   const address = GetUserAddress()
 
     useEffect(() => {
-      if (!address) return; // Prevent fetching if no userAddress
+      if (!address) return; 
   
       // setInventoryLoading(true);
       fetchUserInventory(address)
@@ -169,6 +193,10 @@ export default function FarmPage() {
     }, [address]);
 
     useEffect(() => {
+      if (!address) {
+        console.warn("Skipping fetchUserDetail: address is missing");
+        return;
+      }
       const fetchUserDetail = async () => {
         try {
           const userData = await getUserDetails(address);
@@ -258,6 +286,8 @@ export default function FarmPage() {
   }
 
   const handleTileClick = (tile: Tile) => {
+    console.log(`Clicked on tile with ID: ${tile.id}, factoryType:`, tile.factoryType)
+
     setSelectedTile(tile)
     // On mobile, automatically open the stats panel when a tile is selected
     if (window.innerWidth < 768) {
@@ -309,24 +339,41 @@ export default function FarmPage() {
   //   setSelectedTile((prev) => (prev ? { ...prev, status: "active", cropType, growthStage: 0 } : null))
   // }
 
-  const handleBuildFactory = async (): Promise<boolean> => {
+  const handleBuildFactory = async (factoryType: number): Promise<boolean> => {
     if (!selectedTile) return false
 
-    const success = await buildFactory(selectedTile.id)
+    try {
+     const success = await buildFactory(selectedTile.id,factoryType)
 
-    if (success) {
-      // Update the UI after successful factory building
-      setTiles(
-        tiles.map((tile) =>
-          tile.id === selectedTile.id ? { ...tile, buildingType: "factory", cropType: "none" } : tile,
-        ),
-      )
-      setSelectedTile((prev) => (prev ? { ...prev, buildingType: "factory", cropType: "none" } : null))
+      await fetchTiles()
+      if (success === true) {
+        await fetchTiles()
+      }
+      return success
+    } catch (error) {
+      console.error("Error planting crop:", error)
+      return false
     }
-
-    return success
   }
 
+
+  const handleProduceFromFactory = async (): Promise<boolean> => {
+    if (!selectedTile) return false
+
+    try {
+      const success = await produceFromFactory(selectedTile.id)
+ 
+       await fetchTiles()
+       if (success === true) {
+         await fetchTiles()
+       }
+       return success
+     } catch (error) {
+       console.error("Error planting crop:", error)
+       return false
+     }
+
+  }
   // Function to handle planting a crop
   const handlePlantCrop = async (cropType: number): Promise<boolean> => {
     if (!selectedTile) return false
@@ -344,6 +391,7 @@ export default function FarmPage() {
       return false
     }
   }
+
 
   const handleHarvestCrop = async (): Promise<boolean> => {
     if (!selectedTile) {
@@ -408,9 +456,10 @@ export default function FarmPage() {
             onListForSale={handleListForSale}
           />
 
+       
           <BuildFactoryModal
-            isOpen={isBuildFactoryModalOpen}
-            onClose={() => setIsBuildFactoryModalOpen(false)}
+            isOpen={modalStates.isBuildFactoryModalOpen}
+            onClose={() => closeModal("isBuildFactoryModalOpen")}
             tileId={selectedTile.id}
             fertility={selectedTile.fertility}
             waterLevel={selectedTile.waterLevel}
@@ -427,6 +476,17 @@ export default function FarmPage() {
             sunlight={selectedTile.sunlight}
             onPlantCrop={handlePlantCrop}
           />
+
+      {selectedTile.factoryType && !selectedTile.isCrop && selectedTile.factoryType !== "None" && (
+            <ProduceFromFactoryModal
+              isOpen={modalStates.isProduceModalOpen}
+              onClose={() => closeModal("isProduceModalOpen")}
+              tileId={selectedTile.id}
+              factoryType={selectedTile.factoryType}
+              userInventory={userInventory}
+              onProduce={handleProduceFromFactory}
+            />
+          )}
         </>
       )}
 
@@ -632,18 +692,18 @@ export default function FarmPage() {
                                   : "bg-[#4cd6e3]/10 border-2 border-[#4cd6e3]/30 hover:border-[#4cd6e3]"
                       }`}
                     >
-                      {tile.status === "active" && (
+                      {tile.status === "active" && tile.isCrop && (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Sprout className="h-5 w-5 text-blue-400" />
                           <div className="absolute bottom-0.5 text-[8px] font-medium">{tile.growthStage}%</div>
                         </div>
                       )}
-                      {tile.status === "inactive" && tile.buildingType === "factory" && (
+                      {tile.status === "active" && !tile.isCrop && tile.factoryType !== "None" && (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Factory className="h-5 w-5 text-gray-400" />
                         </div>
                       )}
-                      {tile.status === "inactive" && !tile.buildingType && (
+                      {tile.status === "inactive" && !tile.factoryType && (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-[10px] text-gray-400 font-medium">Empty</div>
                         </div>
@@ -822,7 +882,8 @@ export default function FarmPage() {
                             Plant Crops
                           </button>
                           <button
-                            onClick={() => setIsBuildFactoryModalOpen(true)}
+                            // onClick={() => setIsBuildFactoryModalOpen(true)}
+                            onClick={() => openModal("isBuildFactoryModalOpen")}
                             className="p-2 bg-[#2a2339] hover:bg-[#4cd6e3]/10 border border-[#4cd6e3]/30 rounded-lg text-center text-xs transition-colors"
                           >
                             <Factory className="h-4 w-4 mx-auto mb-1 text-[#4cd6e3]" />
@@ -842,9 +903,10 @@ export default function FarmPage() {
                     </div>
                   ) : null}
 
-                  {selectedTile.status === "inactive" &&
-                  selectedTile.owner === "CryptoFarmer" &&
-                  selectedTile.buildingType === "factory" ? (
+                  {selectedTile.isCrop == false &&
+                 
+                    selectedTile.factoryType !== "None" &&
+                    selectedTile.owner === "CryptoFarmer" ? (
                     <div className="space-y-3">
                       <div className="text-center mb-2">
                         <div className="text-sm font-medium">Factory</div>
@@ -892,19 +954,21 @@ export default function FarmPage() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 mt-4">
-                        <button className="p-2 bg-[#2a2339] hover:bg-[#4cd6e3]/10 border border-[#4cd6e3]/30 rounded-lg text-center text-xs transition-colors">
+                        <button 
+                        onClick={() => openModal("isProduceModalOpen")}
+                        className="p-2 bg-[#2a2339] hover:bg-[#4cd6e3]/10 border border-[#4cd6e3]/30 rounded-lg text-center text-xs transition-colors">
                           <Building className="h-4 w-4 mx-auto mb-1 text-[#4cd6e3]" />
-                          Upgrade
+                          Produce
                         </button>
-                        <button className="p-2 bg-[#2a2339] hover:bg-[#4cd6e3]/10 border border-[#4cd6e3]/30 rounded-lg text-center text-xs transition-colors">
+                        {/* <button className="p-2 bg-[#2a2339] hover:bg-[#4cd6e3]/10 border border-[#4cd6e3]/30 rounded-lg text-center text-xs transition-colors">
                           <Box className="h-4 w-4 mx-auto mb-1 text-[#4cd6e3]" />
-                          Process Crops
-                        </button>
+                          produce
+                        </button> */}
                       </div>
                     </div>
                   ) : null}
 
-                  {selectedTile.status === "active" && selectedTile.owner === "CryptoFarmer" ? (
+                  {selectedTile.status === "active" && selectedTile.owner === "CryptoFarmer" && selectedTile.cropType && selectedTile.isCrop == true?  (
                     <div className="space-y-3">
                       <div className="text-center mb-2">
                         <div className="text-sm font-medium capitalize">{selectedTile.cropType}</div>
@@ -1070,12 +1134,12 @@ export default function FarmPage() {
                             <div className="text-gray-400">Planted {selectedTile.cropType} on 03/06/2025</div>
                           </div>
                         ) : null}
-                        {selectedTile.buildingType === "factory" && (
+                        {/* {selectedTile.buildingType === "factory" && (
                           <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-[#4cd6e3]"></div>
                             <div className="text-gray-400">Built factory on 03/07/2025</div>
                           </div>
-                        )}
+                        )} */}
                         {selectedTile.status === "forSale" && (
                           <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-[#4cd6e3]"></div>

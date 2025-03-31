@@ -3,7 +3,7 @@ import { prepareContractCall, PreparedTransaction, toWei } from "thirdweb"
 import { useSendTransaction } from "thirdweb/react"
 import { approve } from "thirdweb/extensions/erc20"
 import { SEEDTokenContract } from "@/app/contract"
-import { mainContract } from "@/app/contract"
+import { mainContract ,utilsContract} from "@/app/contract"
 import { getTileDetails } from "./getTileDetails"
 import { readContract } from "thirdweb"
 
@@ -181,20 +181,7 @@ export function useLandContract() {
        }
    
   }
-  const buildFactory = async (tileId: number): Promise<boolean> => {
-    try {
-      // In a real app, you would call the land contract's buildFactory function
-      console.log(`Building factory on tile ID: ${tileId}`)
-
-      // Simulate a delay for the building transaction
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      return true
-    } catch (error) {
-      console.error("Failed to build factory:", error)
-      return false
-    }
-  }
+ 
 
   const {mutateAsync: sendBuyResource,isError:isBuyResourceError, isSuccess:isBuyResourceSuccess ,status: BuyResourceStatus} = useSendTransaction()
 
@@ -363,6 +350,76 @@ const fetchWateringTimestamp = async (tileId: number): Promise<bigint> => {
   }
 };
 
+
+const {mutateAsync: build,isError:isBuildError, isSuccess:isBuildSuccess ,status: buildStatus} = useSendTransaction()
+
+   const buildFactory = async (tileId: number, factory: number): Promise<boolean> => {
+
+    try {
+        
+        const transaction =  prepareContractCall({
+         contract: mainContract,
+         method: "buildFactory",
+         params:[Number(tileId),factory]
+   
+       }) as PreparedTransaction;
+       
+       await build(transaction)
+       
+       if ((buildStatus === "success" || isBuildSuccess) && !isBuildError)
+
+       
+        {
+    
+           return true
+       }
+       else{
+        return false
+       }
+         
+       
+       } catch (error) {
+       console.log(error)
+       return false
+       }
+   
+  }
+
+
+  const {mutateAsync: produceFactory,isError:isProduceFactoryError, isSuccess:isProduceFactorySuccess ,status: produceStatus} = useSendTransaction()
+
+  const produceFromFactory = async (tileId: number): Promise<boolean> => {
+
+   try {
+       
+       const transaction =  prepareContractCall({
+        contract: utilsContract,
+        method: "produceFromFactory",
+        params:[BigInt(tileId)]
+  
+      }) as PreparedTransaction;
+      
+      await produceFactory(transaction)
+      
+      if ((produceStatus === "success" || isProduceFactorySuccess) && !isProduceFactoryError)
+
+      
+       {
+   
+          return true
+      }
+      else{
+       return false
+      }
+        
+      
+      } catch (error) {
+      console.log(error)
+      return false
+      }
+  
+ }
+
   return {
     approveTokens,
     purchaseTile,
@@ -375,7 +432,8 @@ const fetchWateringTimestamp = async (tileId: number): Promise<bigint> => {
     fertilizeCrop,
     canWater,
     fetchWateringTimestamp,
-    harvestCrop
+    harvestCrop,
+    produceFromFactory
   }
 }
 

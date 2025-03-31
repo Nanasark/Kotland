@@ -140,12 +140,16 @@ import { getTileDetails } from "./getTileDetails";
 import { toEther } from "thirdweb";
 
 type TileStatus = "available" | "owned" | "active" | "inactive" | "forSale";
+type FactoryType = "FoodFactory" | "EnergyFactory" | "Bakery" | "JuiceFactory" | "BioFuelFactory" | "None"
 type CropType = "wheat" | "corn" | "potato" | "carrot" | "none";
+
 
 interface Tile {
   id: number;
   status: TileStatus;
   cropType: CropType;
+  factoryType: FactoryType
+  isCrop: boolean;
   growthStage?: number;
   fertility?: number;
   waterLevel?: number;
@@ -161,6 +165,15 @@ const cropTypes: Record<number, CropType> = {
   3: "potato",
   4: "carrot",
 };
+
+const factoryTypes: Record<number, FactoryType> = {
+  1: "FoodFactory",
+  2: "EnergyFactory",
+  3: "Bakery",
+  4:  "JuiceFactory",
+  5: "BioFuelFactory"
+};
+
 
 export const generateTiles = async (
   rows: number,
@@ -196,6 +209,7 @@ export const generateTiles = async (
           id: i,
           status: "available",
           cropType: "none",
+          factoryType: "None",
           fertility: 0,
           waterLevel: 0,
           sunlight: 50 + Math.floor(Math.random() * 50),
@@ -219,10 +233,13 @@ export const generateTiles = async (
         price = BigInt(0),
         isBeingUsed = false,
         cropType = 0,
-        growthStage = 0
+        factoryType =0,
+        growthStage = 0,
+        isCrop =false
       } = tileDetails || {};
 
       const tileCrop = cropTypes[cropType] || "none";
+      const tileFactory = factoryTypes[factoryType] || "None";
       console.log(
         `Tile ${i} - Exists: ${tileExists}, Owner: ${owner}, For Sale: ${forSale}, Active: ${isBeingUsed}`
       );
@@ -233,6 +250,7 @@ export const generateTiles = async (
           status: "owned",
           owner,
           cropType: tileCrop,
+          factoryType: tileFactory,
           fertility: Number(fertility),
           waterLevel: Number(waterLevel),
           sunlight: 50 + Math.floor(Math.random() * 50),
@@ -245,9 +263,11 @@ export const generateTiles = async (
           owner: currentUser,
           cropType: "none",
           fertility: Number(fertility),
+          factoryType: tileFactory,
           waterLevel: Number(waterLevel),
           sunlight: 50 + Math.floor(Math.random() * 50),
-          growthStage:growthStage
+          growthStage:growthStage,
+          isCrop:isCrop
         };
       } else if (owner === userAddress && isBeingUsed) {
         return {
@@ -255,10 +275,12 @@ export const generateTiles = async (
           status: "active",
           owner: currentUser,
           cropType: tileCrop,
+          factoryType: tileFactory,
           fertility: Number(fertility),
           waterLevel: Number(waterLevel),
           sunlight: 50 + Math.floor(Math.random() * 50),
-          growthStage:growthStage
+          growthStage:growthStage,
+          isCrop:isCrop
         };
       } else {
         return {
@@ -266,11 +288,13 @@ export const generateTiles = async (
           status: "forSale",
           owner,
           cropType: "none",
+          
           fertility: Number(fertility),
           waterLevel: Number(waterLevel),
           sunlight: 50 + Math.floor(Math.random() * 50),
           purchasePrice: Number(toEther(price)),
-          growthStage:growthStage
+          growthStage:growthStage,
+          isCrop:isCrop
         };
       }
     } catch (error) {

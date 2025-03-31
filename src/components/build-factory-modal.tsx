@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { X, AlertCircle, Loader2, Factory, Wrench } from "lucide-react"
+import { X, AlertCircle, Loader2, Utensils, Zap, Cookie, Coffee, Fuel } from "lucide-react"
 
 interface BuildFactoryModalProps {
   isOpen: boolean
@@ -10,7 +10,7 @@ interface BuildFactoryModalProps {
   fertility?: number
   waterLevel?: number
   sunlight?: number
-  onBuildFactory: () => Promise<boolean>
+  onBuildFactory: (factoryType: number) => Promise<boolean>
 }
 
 export default function BuildFactoryModal({
@@ -24,19 +24,64 @@ export default function BuildFactoryModal({
 }: BuildFactoryModalProps) {
   const [isBuilding, setIsBuilding] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedType, setSelectedType] = useState<string>("processing")
+  const [selectedType, setSelectedType] = useState<string>("FoodFactory")
 
   if (!isOpen) return null
+  const convertedFactoryType = selectedType === "FoodFactory" ? 1 : selectedType=== "EnergyFactory" ? 2 : selectedType === "Bakery"? 3: selectedType === "JuiceFactory" ? 4: selectedType === "BioFuelFactory"? 5:0
+  const factoryDetails = {
+    FoodFactory: {
+      name: "Food Factory",
+      icon: Utensils,
+      description: "Converts crops into food",
+      input: "50 Wheat OR 50 Corn OR 50 Potato OR 50 Carrot",
+      output: "15 Food",
+      color: "text-green-400",
+    },
+    EnergyFactory: {
+      name: "Energy Factory",
+      icon: Zap,
+      description: "Converts food and goods into energy",
+      input: "20 Food + 10 Factory Goods",
+      output: "10 Energy",
+      color: "text-blue-400",
+    },
+    Bakery: {
+      name: "Bakery",
+      icon: Cookie,
+      description: "Bakes wheat and food into goods",
+      input: "20 Wheat + 10 Food",
+      output: "20 Factory Goods",
+      color: "text-yellow-400",
+    },
+    JuiceFactory: {
+      name: "Juice Factory",
+      icon: Coffee,
+      description: "Processes corn and carrot into goods",
+      input: "20 Corn + 10 Carrot",
+      output: "20 Factory Goods",
+      color: "text-orange-400",
+    },
+    BioFuelFactory: {
+      name: "BioFuel Factory",
+      icon: Fuel,
+      description: "Converts goods and potato into energy and fertilizer",
+      input: "20 Factory Goods + 30 Potato",
+      output: "5 Energy + 40 Fertilizer",
+      color: "text-purple-400",
+    },
+  }
 
   const handleBuildFactory = async () => {
     setIsBuilding(true)
     setError(null)
 
     try {
-      const success = await onBuildFactory()
+      const success = await onBuildFactory(convertedFactoryType)
       if (success) {
         onClose()
       }
+      onClose()
+      
     } catch (err) {
       setError("Failed to build factory. Please try again.")
       console.error("Building error:", err)
@@ -45,9 +90,12 @@ export default function BuildFactoryModal({
     }
   }
 
+  const currentFactory = factoryDetails[selectedType as keyof typeof factoryDetails]
+  const FactoryIcon = currentFactory.icon
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="relative w-full max-w-md p-6 bg-[#2a2339] rounded-lg shadow-xl animate-fadeIn">
+      <div className="relative w-full max-w-lg p-6 bg-[#2a2339] rounded-lg shadow-xl animate-fadeIn">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">
           <X className="h-5 w-5" />
         </button>
@@ -64,31 +112,37 @@ export default function BuildFactoryModal({
         <div className="bg-[#1a1528] p-4 rounded-lg mb-4">
           <div className="mb-4">
             <h3 className="text-sm font-medium mb-2 text-gray-300">Factory Type</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setSelectedType("processing")}
-                className={`p-3 rounded-lg flex flex-col items-center gap-2 transition-colors ${
-                  selectedType === "processing"
-                    ? "bg-[#4cd6e3]/20 border border-[#4cd6e3]"
-                    : "bg-[#2a2339] border border-[#2a2339] hover:border-[#4cd6e3]/30"
-                }`}
-              >
-                <Factory className={`h-5 w-5 ${selectedType === "processing" ? "text-[#4cd6e3]" : "text-gray-400"}`} />
-                <span className="text-xs">Processing</span>
-              </button>
-              <button
-                onClick={() => setSelectedType("manufacturing")}
-                className={`p-3 rounded-lg flex flex-col items-center gap-2 transition-colors ${
-                  selectedType === "manufacturing"
-                    ? "bg-[#4cd6e3]/20 border border-[#4cd6e3]"
-                    : "bg-[#2a2339] border border-[#2a2339] hover:border-[#4cd6e3]/30"
-                }`}
-              >
-                <Wrench
-                  className={`h-5 w-5 ${selectedType === "manufacturing" ? "text-[#4cd6e3]" : "text-gray-400"}`}
-                />
-                <span className="text-xs">Manufacturing</span>
-              </button>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              {Object.entries(factoryDetails).map(([typeId, factory]) => (
+                <button
+                  key={typeId}
+                  onClick={() => setSelectedType(typeId)}
+                  className={`p-3 rounded-lg flex flex-col items-center gap-2 transition-colors ${
+                    selectedType === typeId
+                      ? "bg-[#4cd6e3]/20 border border-[#4cd6e3]"
+                      : "bg-[#2a2339] border border-[#2a2339] hover:border-[#4cd6e3]/30"
+                  }`}
+                >
+                  <factory.icon className={`h-5 w-5 ${selectedType === typeId ? factory.color : "text-gray-400"}`} />
+                  <span className="text-xs">{factory.name}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="p-3 rounded-lg bg-[#2a2339] border border-[#4cd6e3]/30 mb-4">
+              <h4 className="text-xs font-medium mb-1 text-gray-300">{currentFactory.name}</h4>
+              <p className="text-xs text-gray-400 mb-2">{currentFactory.description}</p>
+
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">Input:</span>
+                  <span className="text-xs text-[#4cd6e3]">{currentFactory.input}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">Output:</span>
+                  <span className="text-xs text-[#4cd6e3]">{currentFactory.output}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -96,14 +150,6 @@ export default function BuildFactoryModal({
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Construction Cost:</span>
               <span className="text-[#4cd6e3] font-medium">500 $SEED</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Build Time:</span>
-              <span className="text-[#4cd6e3] font-medium">2 Days</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Production Capacity:</span>
-              <span className="text-[#4cd6e3] font-medium">100 units/day</span>
             </div>
           </div>
 
@@ -158,8 +204,8 @@ export default function BuildFactoryModal({
             </>
           ) : (
             <>
-              <Factory className="h-4 w-4" />
-              Build Factory
+              <FactoryIcon className="h-4 w-4" />
+              Build {currentFactory.name}
             </>
           )}
         </button>
