@@ -386,7 +386,7 @@ const {mutateAsync: build,isError:isBuildError, isSuccess:isBuildSuccess ,status
   }
 
 
-  const {mutateAsync: produceFactory,isError:isProduceFactoryError, isSuccess:isProduceFactorySuccess ,status: produceStatus} = useSendTransaction()
+  const {mutateAsync: produceFactory,isError:isProduceFactoryError, isSuccess:isProduceFactorySuccess ,status: produceStatus,error:produceError} = useSendTransaction()
 
   const produceFromFactory = async (tileId: number): Promise<boolean> => {
 
@@ -396,6 +396,8 @@ const {mutateAsync: build,isError:isBuildError, isSuccess:isBuildSuccess ,status
         contract: utilsContract,
         method: "produceFromFactory",
         params:[BigInt(tileId)]
+        
+
   
       }) as PreparedTransaction;
       
@@ -409,6 +411,7 @@ const {mutateAsync: build,isError:isBuildError, isSuccess:isBuildSuccess ,status
           return true
       }
       else{
+        console.log("produce error:", produceError)
        return false
       }
         

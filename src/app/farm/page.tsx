@@ -345,7 +345,7 @@ export default function FarmPage() {
     try {
      const success = await buildFactory(selectedTile.id,factoryType)
 
-      await fetchTiles()
+      // await fetchTiles()
       if (success === true) {
         await fetchTiles()
       }
@@ -358,7 +358,10 @@ export default function FarmPage() {
 
 
   const handleProduceFromFactory = async (): Promise<boolean> => {
-    if (!selectedTile) return false
+    if (!selectedTile) {
+      console.warn("tile not available")
+      return false
+    } 
 
     try {
       const success = await produceFromFactory(selectedTile.id)
