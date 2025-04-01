@@ -166,7 +166,7 @@ export default function ProduceFromFactoryModal({
       if (success) {
         onClose()
       }
-      // onClose()
+      onClose()
     } catch (err) {
       setError("Failed to produce resources. Please try again.")
       console.error("Production error:", err)
