@@ -153,9 +153,9 @@ export default function PlantCropModal({
             </div>
           </div>
 
-          <h3 className="text-sm font-medium mt-4 mb-2 text-gray-300">Tile Properties</h3>
+          {/* <h3 className="text-sm font-medium mt-4 mb-2 text-gray-300">Tile Properties</h3> */}
 
-          {fertility !== undefined && (
+          {/* {fertility !== undefined && (
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-400">Fertility:</span>
               <div className="flex items-center gap-1">
@@ -165,9 +165,9 @@ export default function PlantCropModal({
                 <span className="text-xs text-green-400">{fertility}%</span>
               </div>
             </div>
-          )}
+          )} */}
 
-          {waterLevel !== undefined && (
+          {/* {waterLevel !== undefined && (
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-400">Water Access:</span>
               <div className="flex items-center gap-1">
@@ -189,7 +189,7 @@ export default function PlantCropModal({
                 <span className="text-xs text-yellow-400">{sunlight}%</span>
               </div>
             </div>
-          )}
+          )} */}
         </div>
 
         <button

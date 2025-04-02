@@ -87,7 +87,7 @@ export default function ListForSaleModal({
             />
           </div>
 
-          <h3 className="text-sm font-medium mb-2 text-gray-300">Tile Properties</h3>
+          {/* <h3 className="text-sm font-medium mb-2 text-gray-300">Tile Properties</h3>
 
           {fertility !== undefined && (
             <div className="flex justify-between items-center mb-2">
@@ -123,7 +123,7 @@ export default function ListForSaleModal({
                 <span className="text-xs text-yellow-400">{sunlight}%</span>
               </div>
             </div>
-          )}
+          )} */}
         </div>
 
         <button
