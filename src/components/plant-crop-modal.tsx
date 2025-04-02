@@ -17,9 +17,9 @@ export default function PlantCropModal({
   isOpen,
   onClose,
   tileId,
-  fertility,
-  waterLevel,
-  sunlight,
+  // fertility,
+  // waterLevel,
+  // sunlight,
   onPlantCrop,
 }: PlantCropModalProps) {
   const [isPlanting, setIsPlanting] = useState(false)

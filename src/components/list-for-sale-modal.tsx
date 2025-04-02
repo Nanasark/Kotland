@@ -17,9 +17,9 @@ export default function ListForSaleModal({
   isOpen,
   onClose,
   tileId,
-  fertility,
-  waterLevel,
-  sunlight,
+  // fertility,
+  // waterLevel,
+  // sunlight,
   onListForSale,
 }: ListForSaleModalProps) {
   const [price, setPrice] = useState<number>(500)

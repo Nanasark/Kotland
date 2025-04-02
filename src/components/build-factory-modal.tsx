@@ -17,9 +17,9 @@ export default function BuildFactoryModal({
   isOpen,
   onClose,
   tileId,
-  fertility,
-  waterLevel,
-  sunlight,
+  // fertility,
+  // waterLevel,
+  // sunlight,
   onBuildFactory,
 }: BuildFactoryModalProps) {
   const [isBuilding, setIsBuilding] = useState(false)
